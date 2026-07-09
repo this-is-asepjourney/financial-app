@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  name           String
+  email          String    @unique
+  passwordHash   String
+  monthlyIncome  Float     @default(0)
+  currency       String    @default("IDR")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  categories         Category[]
+  transactions       Transaction[]
+  budgets           Budget[]
+  financialGoals    FinancialGoal[]
+  investments       Investment[]
+  financialHealth   FinancialHealth[]
+  wallets           Wallet[]
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  type      String   // bank, ewallet, cash
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  userId    String
+  name      String
+  type      String    // income, expense
+  icon      String?
+  color     String    @default("#6366F1")
+  budget    Float?
+  createdAt DateTime  @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets     Budget[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id              String    @id @default(uuid())
+  userId          String
+  categoryId      String?
+  amount          Float
+  type            String    // income, expense
+  description     String?
+  date            DateTime
+  isRecurring     Boolean   @default(false)
+  recurringType   String?   // daily, weekly, monthly, yearly
+  createdAt       DateTime  @default(now())
+  walletId        String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  wallet   Wallet?   @relation(fields: [walletId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([categoryId])
+  @@index([walletId])
+}
+
+model Budget {
+  id         String   @id @default(uuid())
+  userId     String
+  categoryId String
+  amount     Float
+  month      DateTime // First day of the month
+  spent      Float    @default(0)
+  dueDate    DateTime?
+  isRecurring Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+}
+
+model FinancialGoal {
+  id            String   @id @default(uuid())
+  userId        String
+  name          String
+  targetAmount  Float
+  currentAmount Float    @default(0)
+  deadline      DateTime?
+  status        String   @default("active") // active, completed, cancelled
+  priority      String   @default("medium") // low, medium, high
+  createdAt     DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Investment {
+  id           String   @id @default(uuid())
+  userId       String
+  name         String
+  type         String   // stocks, mutual_fund, crypto, deposit, property
+  amount       Float
+  currentValue Float?
+  returns      Float?
+  startDate    DateTime
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model FinancialHealth {
+  id                  String   @id @default(uuid())
+  userId              String
+  month               DateTime
+  totalIncome         Float    @default(0)
+  totalExpenses       Float    @default(0)
+  totalSavings        Float    @default(0)
+  savingsRate         Float?
+  emergencyFundMonths Float?
+  debtToIncomeRatio   Float?
+  financialScore      Int?
+  createdAt           DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId])
+}
