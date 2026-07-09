@@ -51,7 +51,8 @@ export async function PUT(
         // Deduct from wallet if walletId is provided and it's a top up
         const topUpAmount = currentAmount - oldGoal.currentAmount
         if (walletId && topUpAmount > 0) {
-            await prisma.wallet.update({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (prisma as any).wallet.update({
                 where: { id: walletId },
                 data: {
                     balance: { decrement: topUpAmount }

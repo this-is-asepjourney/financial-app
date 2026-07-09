@@ -125,6 +125,7 @@ export default function GoalsPage() {
                 throw new Error("Gagal")
             }
         } catch (error) {
+            console.error(error)
             toast({
                 title: "Error",
                 description: "Gagal menambahkan goal.",
@@ -171,6 +172,7 @@ export default function GoalsPage() {
                 throw new Error("Gagal")
             }
         } catch (error) {
+            console.error(error)
             toast({
                 title: "Error",
                 description: "Gagal top-up goal.",

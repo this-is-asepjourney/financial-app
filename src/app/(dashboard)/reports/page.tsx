@@ -7,6 +7,25 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useAuthStore } from '@/store/auth-store'
 import { formatCurrency } from '@/lib/utils'
 
+// Format tooltip values
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-background border rounded-lg shadow-lg p-4">
+                <p className="font-medium mb-2">{label}</p>
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                {payload.map((entry: any, index: number) => (
+                    <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+                        {entry.name === 'income' ? 'Pemasukan' : entry.name === 'expense' ? 'Pengeluaran' : entry.name}: {formatCurrency(entry.value)}
+                    </p>
+                ))}
+            </div>
+        )
+    }
+    return null
+}
+
 export default function ReportsPage() {
     const { user } = useAuthStore()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,24 +66,7 @@ export default function ReportsPage() {
 
     const { summary, history, expensesByCategory } = data
 
-    // Format tooltip values
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-background border rounded-lg shadow-lg p-4">
-                    <p className="font-medium mb-2">{label}</p>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {payload.map((entry: any, index: number) => (
-                        <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
-                            {entry.name === 'income' ? 'Pemasukan' : entry.name === 'expense' ? 'Pengeluaran' : entry.name}: {formatCurrency(entry.value)}
-                        </p>
-                    ))}
-                </div>
-            )
-        }
-        return null
-    }
+
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

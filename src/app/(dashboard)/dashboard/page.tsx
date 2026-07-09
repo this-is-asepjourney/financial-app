@@ -67,7 +67,7 @@ export default function DashboardPage() {
             
             if (walletsRes.ok) {
                 const walletsData = await walletsRes.json()
-                const sum = (walletsData.wallets || []).reduce((acc: number, w: any) => acc + w.balance, 0)
+                const sum = (walletsData.wallets || []).reduce((acc: number, w: { balance: number }) => acc + w.balance, 0)
                 setTotalWalletBalance(sum)
             }
 
@@ -84,9 +84,14 @@ export default function DashboardPage() {
                 monthlyData,
                 categoryData: category.analysis || [],
                 healthScore: {
-                    score: health.health?.score || 0,
+                    score: health.health?.overallScore || 0,
                     status: health.health?.status || 'fair',
-                    breakdown: health.health?.breakdown || {},
+                    breakdown: {
+                        spend: health.health?.spend?.score || 0,
+                        save: health.health?.save?.score || 0,
+                        borrow: health.health?.borrow?.score || 0,
+                        plan: health.health?.plan?.score || 0,
+                    },
                 },
             })
         } catch (error) {
