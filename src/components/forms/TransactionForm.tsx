@@ -73,7 +73,7 @@ export function TransactionForm({
         watch,
         formState: { errors },
     } = useForm<TransactionInput>({
-        resolver: zodResolver(transactionSchema),
+        resolver: zodResolver(transactionSchema) as any,
         defaultValues: {
             amount: transaction?.amount || 0,
             type: transaction?.type || 'expense',
