@@ -36,7 +36,7 @@ interface TransactionFormProps {
     transaction?: {
         id: string
         amount: number
-        type: 'income' | 'expense'
+        type: 'income' | 'expense' | 'transfer'
         description: string | null
         date: string
         categoryId: string | null
@@ -56,7 +56,7 @@ export function TransactionForm({
     const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [transactionType, setTransactionType] = useState<'income' | 'expense'>(
-        transaction?.type || 'expense'
+        (transaction?.type === 'income' || transaction?.type === 'expense') ? transaction.type : 'expense'
     )
     const [displayAmount, setDisplayAmount] = useState<string>(
         transaction?.amount ? transaction.amount.toLocaleString('id-ID') : ''
@@ -76,7 +76,7 @@ export function TransactionForm({
         resolver: zodResolver(transactionSchema) as any,
         defaultValues: {
             amount: transaction?.amount || 0,
-            type: transaction?.type || 'expense',
+            type: (transaction?.type === 'income' || transaction?.type === 'expense') ? transaction.type : 'expense',
             categoryId: transaction?.categoryId || undefined,
             walletId: (transaction as any)?.walletId || undefined,
             description: transaction?.description || '',
