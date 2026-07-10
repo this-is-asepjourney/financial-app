@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Wallet as WalletIcon, CreditCard, Banknote, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Wallet as WalletIcon, CreditCard, Banknote, Plus, Trash2, Edit2, ArrowRightLeft } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth-store'
 import { useToast } from '@/components/ui/use-toast'
@@ -31,6 +31,14 @@ export default function WalletsPage() {
         type: 'bank',
         balance: 0,
     })
+    const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
+    const [transferData, setTransferData] = useState({
+        fromWalletId: '',
+        toWalletId: '',
+        amount: 0,
+        description: 'Transfer Dana',
+    })
+    const [isTransferring, setIsTransferring] = useState(false)
 
     const fetchWallets = async () => {
         if (!user) return
@@ -90,6 +98,47 @@ export default function WalletsPage() {
         }
     }
 
+    const handleTransfer = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!user) return
+        if (transferData.fromWalletId === transferData.toWalletId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Dompet asal dan tujuan tidak boleh sama' })
+            return
+        }
+        if (transferData.amount <= 0) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Jumlah transfer harus lebih dari 0' })
+            return
+        }
+        setIsTransferring(true)
+        try {
+            const res = await fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    type: 'transfer',
+                    amount: transferData.amount,
+                    walletId: transferData.fromWalletId,
+                    toWalletId: transferData.toWalletId,
+                    description: transferData.description,
+                    date: new Date().toISOString(),
+                    isRecurring: false,
+                }),
+            })
+
+            if (!res.ok) throw new Error('Gagal melakukan transfer')
+
+            toast({ title: 'Berhasil', description: 'Transfer dana berhasil dicatat' })
+            setIsTransferDialogOpen(false)
+            setTransferData({ fromWalletId: '', toWalletId: '', amount: 0, description: 'Transfer Dana' })
+            fetchWallets()
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Gagal melakukan transfer' })
+        } finally {
+            setIsTransferring(false)
+        }
+    }
+
     const handleDelete = async (id: string) => {
         if (!confirm('Yakin ingin menghapus dompet ini? Transaksi yang terkait akan kehilangan referensi dompet.')) return
 
@@ -132,16 +181,82 @@ export default function WalletsPage() {
                     </p>
                 </div>
                 
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button onClick={() => {
-                            setEditingWallet(null)
-                            setFormData({ name: '', type: 'bank', balance: 0 })
-                        }}>
-                            <Plus className="mr-2 h-4 w-4" /> Tambah Dompet
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
+                <div className="flex flex-wrap gap-2">
+                    <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" onClick={() => {
+                                setTransferData({ fromWalletId: '', toWalletId: '', amount: 0, description: 'Transfer Dana' })
+                            }}>
+                                <ArrowRightLeft className="mr-2 h-4 w-4" /> Transfer Dana
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Transfer Antar Dompet</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleTransfer} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Dari Dompet</Label>
+                                    <Select
+                                        value={transferData.fromWalletId}
+                                        onValueChange={(value) => setTransferData({ ...transferData, fromWalletId: value })}
+                                    >
+                                        <SelectTrigger><SelectValue placeholder="Pilih dompet asal" /></SelectTrigger>
+                                        <SelectContent>
+                                            {wallets.map(w => (
+                                                <SelectItem key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ke Dompet</Label>
+                                    <Select
+                                        value={transferData.toWalletId}
+                                        onValueChange={(value) => setTransferData({ ...transferData, toWalletId: value })}
+                                    >
+                                        <SelectTrigger><SelectValue placeholder="Pilih dompet tujuan" /></SelectTrigger>
+                                        <SelectContent>
+                                            {wallets.map(w => (
+                                                <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Jumlah Transfer</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={transferData.amount || ''}
+                                        onChange={(e) => setTransferData({ ...transferData, amount: Number(e.target.value) })}
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Catatan</Label>
+                                    <Input
+                                        value={transferData.description}
+                                        onChange={(e) => setTransferData({ ...transferData, description: e.target.value })}
+                                    />
+                                </div>
+                                <Button type="submit" className="w-full" disabled={isTransferring}>
+                                    {isTransferring ? 'Memproses...' : 'Kirim Dana'}
+                                </Button>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button onClick={() => {
+                                setEditingWallet(null)
+                                setFormData({ name: '', type: 'bank', balance: 0 })
+                            }}>
+                                <Plus className="mr-2 h-4 w-4" /> Tambah Dompet
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{editingWallet ? 'Edit Dompet' : 'Tambah Dompet Baru'}</DialogTitle>
                         </DialogHeader>
@@ -193,6 +308,7 @@ export default function WalletsPage() {
                         </form>
                     </DialogContent>
                 </Dialog>
+                </div>
             </div>
 
             <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">

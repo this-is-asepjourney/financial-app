@@ -15,7 +15,7 @@ export async function GET(request: Request) {
         const date = month ? new Date(month) : new Date()
         const { start, end } = getMonthRange(date)
 
-        const [incomeTransactions, expenseTransactions] = await Promise.all([
+        const [incomeTransactions, expenseTransactions, transferTransactions] = await Promise.all([
             prisma.transaction.aggregate({
                 where: {
                     userId,
@@ -34,10 +34,20 @@ export async function GET(request: Request) {
                 _sum: { amount: true },
                 _count: true,
             }),
+            prisma.transaction.aggregate({
+                where: {
+                    userId,
+                    type: 'transfer',
+                    date: { gte: start, lte: end },
+                },
+                _sum: { amount: true },
+                _count: true,
+            }),
         ])
 
         const totalIncome = incomeTransactions._sum.amount || 0
         const totalExpenses = expenseTransactions._sum.amount || 0
+        const totalTransfers = transferTransactions._sum.amount || 0
         const balance = totalIncome - totalExpenses
         const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0
 
@@ -96,11 +106,13 @@ export async function GET(request: Request) {
                 month: start,
                 totalIncome,
                 totalExpenses,
+                totalTransfers,
                 balance,
                 savingsRate,
                 transactionCount: {
                     income: incomeTransactions._count,
                     expense: expenseTransactions._count,
+                    transfer: transferTransactions._count,
                 },
             },
             history,

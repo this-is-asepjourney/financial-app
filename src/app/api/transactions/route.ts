@@ -55,6 +55,13 @@ export async function GET(request: Request) {
                             name: true,
                             type: true,
                         }
+                    },
+                    toWallet: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                        }
                     }
                 },
                 orderBy: { date: 'desc' },
@@ -94,7 +101,7 @@ export async function POST(request: Request) {
             )
         }
 
-        const { amount, type, categoryId, walletId, description, date, isRecurring, recurringType } = validation.data
+        const { amount, type, categoryId, walletId, toWalletId, description, date, isRecurring, recurringType } = validation.data
         const userId = body.userId
 
         const transaction = await prisma.transaction.create({
@@ -104,6 +111,7 @@ export async function POST(request: Request) {
                 type,
                 categoryId: categoryId || null,
                 walletId: walletId || null,
+                toWalletId: toWalletId || null,
                 description,
                 date: new Date(date),
                 isRecurring,
@@ -129,7 +137,16 @@ export async function POST(request: Request) {
         })
 
         // Update Wallet Balance
-        if (walletId) {
+        if (type === 'transfer' && walletId && toWalletId) {
+            await prisma.wallet.update({
+                where: { id: walletId },
+                data: { balance: { decrement: amount } }
+            })
+            await prisma.wallet.update({
+                where: { id: toWalletId },
+                data: { balance: { increment: amount } }
+            })
+        } else if (walletId) {
             await prisma.wallet.update({
                 where: { id: walletId },
                 data: {

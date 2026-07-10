@@ -17,9 +17,10 @@ export const registerSchema = z.object({
 
 export const transactionSchema = z.object({
     amount: z.number().positive('Jumlah harus positif'),
-    type: z.enum(['income', 'expense']),
+    type: z.enum(['income', 'expense', 'transfer']),
     categoryId: z.string().optional(),
     walletId: z.string().optional(),
+    toWalletId: z.string().optional(),
     description: z.string().optional(),
     date: z.coerce.date(),
     isRecurring: z.boolean(),

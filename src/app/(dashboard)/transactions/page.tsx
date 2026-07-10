@@ -32,6 +32,7 @@ import {
     Download,
     ChevronLeft,
     ChevronRight,
+    ArrowRightLeft,
 } from 'lucide-react'
 import { TransactionForm } from '@/components/forms/TransactionForm'
 import { useToast } from '@/components/ui/use-toast'
@@ -39,7 +40,7 @@ import { useToast } from '@/components/ui/use-toast'
 interface Transaction {
     id: string
     amount: number
-    type: 'income' | 'expense'
+    type: 'income' | 'expense' | 'transfer'
     description: string | null
     date: string
     categoryId: string | null
@@ -48,6 +49,17 @@ interface Transaction {
         name: string
         icon: string | null
         color: string
+    } | null
+    wallet: {
+        id: string
+        name: string
+        type: string
+    } | null
+    toWalletId?: string | null
+    toWallet?: {
+        id: string
+        name: string
+        type: string
     } | null
     isRecurring: boolean
     recurringType: string | null
@@ -346,8 +358,10 @@ export default function TransactionsPage() {
                                         >
                                             {transaction.type === 'income' ? (
                                                 <TrendingUp className="h-5 w-5 text-green-600" />
-                                            ) : (
+                                            ) : transaction.type === 'expense' ? (
                                                 <TrendingDown className="h-5 w-5 text-red-600" />
+                                            ) : (
+                                                <ArrowRightLeft className="h-5 w-5 text-purple-600" />
                                             )}
                                         </div>
                                         <div>
@@ -355,7 +369,11 @@ export default function TransactionsPage() {
                                                 {transaction.description || 'Transaksi'}
                                             </p>
                                             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                                <span>{transaction.category?.name || 'Tanpa Kategori'}</span>
+                                                <span>
+                                                    {transaction.type === 'transfer' 
+                                                        ? `${transaction.wallet?.name || 'Dompet'} → ${transaction.toWallet?.name || 'Dompet'}`
+                                                        : (transaction.category?.name || 'Tanpa Kategori')}
+                                                </span>
                                                 <span>•</span>
                                                 <span>{formatDate(transaction.date)}</span>
                                                 {transaction.isRecurring && (
@@ -368,19 +386,24 @@ export default function TransactionsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center justify-between w-full sm:w-auto space-x-4">
-                                        <span className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                                        <span className={`font-semibold ${
+                                            transaction.type === 'income' ? 'text-green-600' : 
+                                            transaction.type === 'expense' ? 'text-red-600' : 'text-purple-600'
                                             }`}>
-                                            {transaction.type === 'income' ? '+' : '-'}
+                                            {transaction.type === 'income' ? '+' : 
+                                             transaction.type === 'expense' ? '-' : ''}
                                             {formatCurrency(transaction.amount)}
                                         </span>
                                         <div className="flex space-x-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(transaction)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
+                                            {transaction.type !== 'transfer' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleEdit(transaction)}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

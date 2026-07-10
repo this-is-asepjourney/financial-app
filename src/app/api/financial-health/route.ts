@@ -23,7 +23,11 @@ export async function GET(request: Request) {
         const wallets = await (prisma as any).wallet.findMany({
             where: { userId },
             include: {
-                transactions: {
+                transactionsFrom: {
+                    where: { date: { gt: now } },
+                    select: { amount: true, type: true }
+                },
+                transactionsTo: {
                     where: { date: { gt: now } },
                     select: { amount: true, type: true }
                 }
@@ -38,9 +42,13 @@ export async function GET(request: Request) {
         wallets.forEach((wallet: any) => {
             let futureNet = 0
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            wallet.transactions.forEach((t: any) => {
+            wallet.transactionsFrom.forEach((t: any) => {
                 if (t.type === 'income') futureNet += t.amount
-                if (t.type === 'expense') futureNet -= t.amount
+                if (t.type === 'expense' || t.type === 'transfer') futureNet -= t.amount
+            })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            wallet.transactionsTo.forEach((t: any) => {
+                if (t.type === 'transfer') futureNet += t.amount
             })
             const currentBalance = wallet.balance - futureNet
             
@@ -91,11 +99,18 @@ export async function GET(request: Request) {
         // 3. Classify Needs vs Wants heuristically
         let needsExpenses = 0
         let wantsExpenses = 0
+        let monthlyDebtPayments = 0
+        let insurancePayments = 0
+        let retirementPayments = 0
 
         if (expensesByCategory.length > 0) {
             const categories = await prisma.category.findMany({
                 where: { id: { in: expensesByCategory.map(e => e.categoryId as string) } }
             })
+
+            const debtKeywords = ['hutang', 'cicilan', 'kredit', 'pinjaman', 'paylater']
+            const insuranceKeywords = ['asuransi', 'bpjs']
+            const retirementKeywords = ['pensiun', 'hari tua', 'jht']
 
             expensesByCategory.forEach(expense => {
                 const cat = categories.find(c => c.id === expense.categoryId)
@@ -103,7 +118,15 @@ export async function GET(request: Request) {
                 const nameLower = (cat?.name || '').toLowerCase()
                 
                 const isNeed = needsKeywords.some(keyword => nameLower.includes(keyword))
-                if (isNeed) {
+                const isDebt = debtKeywords.some(keyword => nameLower.includes(keyword))
+                const isInsurance = insuranceKeywords.some(keyword => nameLower.includes(keyword))
+                const isRetirement = retirementKeywords.some(keyword => nameLower.includes(keyword))
+
+                if (isDebt) monthlyDebtPayments += amount
+                if (isInsurance) insurancePayments += amount
+                if (isRetirement) retirementPayments += amount
+
+                if (isNeed || isDebt || isInsurance) {
                     needsExpenses += amount
                 } else {
                     wantsExpenses += amount
@@ -124,18 +147,18 @@ export async function GET(request: Request) {
             totalSavings: totalAssets, // Liquid Assets + Investments
             emergencyFund: totalCashAndBank, // Only highly liquid cash/bank
             monthlySavings: monthlyIncomeAmount - monthlyExpenseAmount,
-            totalDebt: totalDebt._sum.amount || 0,
-            monthlyDebtPayments: 0, 
+            totalDebt: (totalDebt._sum.amount || 0) + (monthlyDebtPayments * 12), // Estimate total debt based on 12 months of payments if explicit tracking is missing
+            monthlyDebtPayments: monthlyDebtPayments, 
             creditCardDebt: 0,
             totalAssets: totalAssets,
             investments: investmentTotal,
-            retirementSavings: 0,
-            hasHealthInsurance: false,
+            retirementSavings: retirementPayments,
+            hasHealthInsurance: insurancePayments > 0,
             hasLifeInsurance: false,
             hasDisabilityInsurance: false,
             hasBudget: true, 
             hasFinancialPlan: true,
-            hasRetirementPlan: false,
+            hasRetirementPlan: retirementPayments > 0,
             hasWill: false,
         }
 

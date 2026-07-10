@@ -15,7 +15,11 @@ export async function GET(request: Request) {
             where: { userId },
             orderBy: { createdAt: 'asc' },
             include: {
-                transactions: {
+                transactionsFrom: {
+                    where: { date: { gt: new Date() } },
+                    select: { amount: true, type: true }
+                },
+                transactionsTo: {
                     where: { date: { gt: new Date() } },
                     select: { amount: true, type: true }
                 }
@@ -24,11 +28,14 @@ export async function GET(request: Request) {
 
         const processedWallets = wallets.map(wallet => {
             let futureNet = 0
-            wallet.transactions.forEach(t => {
+            wallet.transactionsFrom.forEach(t => {
                 if (t.type === 'income') futureNet += t.amount
-                if (t.type === 'expense') futureNet -= t.amount
+                if (t.type === 'expense' || t.type === 'transfer') futureNet -= t.amount
             })
-            const { transactions, ...walletData } = wallet
+            wallet.transactionsTo.forEach(t => {
+                if (t.type === 'transfer') futureNet += t.amount
+            })
+            const { transactionsFrom, transactionsTo, ...walletData } = wallet
             return {
                 ...walletData,
                 balance: walletData.balance - futureNet,

@@ -115,11 +115,11 @@ export default function FinancialHealthPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
-                                    {formatCurrency(finData?.totalSavings || 0)}
+                                    {formatCurrency(finData?.monthlySavings || 0)}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
                                     {finData &&
-                                        finData.totalSavings > finData.monthlyIncome * 0.2 ? (
+                                        finData.monthlySavings > finData.monthlyIncome * 0.2 ? (
                                         <span className="text-green-600">
                                             Di atas 20% pemasukan
                                         </span>

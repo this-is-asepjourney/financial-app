@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon } from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useAuthStore } from '@/store/auth-store'
 import { formatCurrency } from '@/lib/utils'
@@ -78,7 +78,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 shadow-sm">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-600">
@@ -113,6 +113,18 @@ export default function ReportsPage() {
                     <CardContent>
                         <div className="text-3xl font-bold text-blue-600">{summary.savingsRate.toFixed(1)}%</div>
                         <p className="text-xs text-muted-foreground mt-1">Persentase uang yang ditabung</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2 text-purple-600">
+                            <ArrowRightLeft className="h-4 w-4" />
+                            Volume Transfer
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-purple-600">{formatCurrency(summary.totalTransfers)}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Dari {summary.transactionCount.transfer} transaksi</p>
                     </CardContent>
                 </Card>
             </div>
