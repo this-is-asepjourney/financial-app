@@ -78,7 +78,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 shadow-sm">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-600">
@@ -87,7 +87,7 @@ export default function ReportsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-green-600">{formatCurrency(summary.totalIncome)}</div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600 truncate">{formatCurrency(summary.totalIncome)}</div>
                         <p className="text-xs text-muted-foreground mt-1">Dari {summary.transactionCount.income} transaksi</p>
                     </CardContent>
                 </Card>
@@ -99,7 +99,7 @@ export default function ReportsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-red-600">{formatCurrency(summary.totalExpenses)}</div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-red-600 truncate">{formatCurrency(summary.totalExpenses)}</div>
                         <p className="text-xs text-muted-foreground mt-1">Dari {summary.transactionCount.expense} transaksi</p>
                     </CardContent>
                 </Card>
@@ -111,7 +111,7 @@ export default function ReportsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-blue-600">{summary.savingsRate.toFixed(1)}%</div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 truncate">{summary.savingsRate.toFixed(1)}%</div>
                         <p className="text-xs text-muted-foreground mt-1">Persentase uang yang ditabung</p>
                     </CardContent>
                 </Card>
@@ -123,7 +123,7 @@ export default function ReportsPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-purple-600">{formatCurrency(summary.totalTransfers)}</div>
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600 truncate">{formatCurrency(summary.totalTransfers)}</div>
                         <p className="text-xs text-muted-foreground mt-1">Dari {summary.transactionCount.transfer} transaksi</p>
                     </CardContent>
                 </Card>
@@ -174,8 +174,8 @@ export default function ReportsPage() {
                                             data={expensesByCategory}
                                             cx="50%"
                                             cy="45%"
-                                            innerRadius={80}
-                                            outerRadius={120}
+                                            innerRadius={60}
+                                            outerRadius={100}
                                             paddingAngle={3}
                                             dataKey="amount"
                                             stroke="none"

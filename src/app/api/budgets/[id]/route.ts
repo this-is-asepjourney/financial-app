@@ -30,7 +30,7 @@ export async function PUT(
         })
 
         return NextResponse.json({ budget })
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             { error: 'Gagal mengupdate budget' },
             { status: 500 }
@@ -49,7 +49,7 @@ export async function DELETE(
         })
 
         return NextResponse.json({ success: true })
-    } catch (error) {
+    } catch {
         return NextResponse.json(
             { error: 'Gagal menghapus budget' },
             { status: 500 }

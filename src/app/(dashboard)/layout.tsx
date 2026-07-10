@@ -34,6 +34,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { BottomNav } from '@/components/layout/BottomNav'
 
 const menuItems = [
     {
@@ -328,10 +329,12 @@ export default function DashboardLayout({
                 </header>
 
                 {/* Page Content */}
-                <main className="p-4 lg:p-6">
+                <main className="p-4 pb-24 lg:p-6 lg:pb-6">
                     {children}
                 </main>
             </div>
+            
+            <BottomNav />
         </div>
     )
 }
