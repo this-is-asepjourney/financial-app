@@ -93,15 +93,19 @@ export function FinancialScoreGauge({
                             <div key={key} className="space-y-1">
                                 <div className="flex justify-between text-sm">
                                     <span className="capitalize">
-                                        {key === 'spend'
-                                            ? 'Belanja'
-                                            : key === 'save'
-                                                ? 'Tabungan'
-                                                : key === 'borrow'
-                                                    ? 'Pinjaman'
-                                                    : 'Perencanaan'}
+                                        {key === 'savingsRate'
+                                            ? 'Rasio Tabungan'
+                                            : key === 'emergencyFund'
+                                                ? 'Dana Darurat'
+                                                : key === 'dti'
+                                                    ? 'Rasio Utang (DTI)'
+                                                    : key === 'budgetAdherence'
+                                                        ? 'Kepatuhan Anggaran'
+                                                        : key === 'investmentRatio'
+                                                            ? 'Rasio Investasi'
+                                                            : key}
                                     </span>
-                                    <span className="font-medium">{value}%</span>
+                                    <span className="font-medium">{value}</span>
                                 </div>
                                 <div className="w-full bg-gray-200 rounded-full h-2">
                                     <div

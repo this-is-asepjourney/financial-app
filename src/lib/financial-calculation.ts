@@ -1,13 +1,6 @@
 /**
  * FINANCIAL HEALTH CALCULATOR
  * Berdasarkan teori keuangan yang teruji dari pakar:
- * 
- * 1. Financial Health Network (FinHealth Score®)
- * 2. 50/30/20 Rule - Elizabeth Warren
- * 3. Emergency Fund Theory - Dave Ramsey, Suze Orman
- * 4. Debt-to-Income Ratio (DTI) Standards
- * 5. Net Worth Calculation Standards
- * 6. Savings Rate Theory - Wade Pfau, FIRE Movement
  */
 
 export interface FinancialData {
@@ -42,365 +35,139 @@ export interface FinancialData {
     hasFinancialPlan: boolean
     hasRetirementPlan: boolean
     hasWill: boolean
+    
+    // Budgets
+    budgets: { amount: number; spent: number }[]
 }
 
 export interface FinancialHealthResult {
     overallScore: number
     status: 'excellent' | 'good' | 'fair' | 'poor' | 'critical'
 
-    // Dimensi Financial Health Network
-    spend: {
+    savingsRate: {
         score: number
+        value: number
         status: string
-        details: {
-            expenseToIncomeRatio: number
-            needsToIncomeRatio: number
-            wantsToIncomeRatio: number
-            isLivingWithinMeans: boolean
-        }
-        recommendations: string[]
     }
-
-    save: {
+    emergencyFund: {
         score: number
+        value: number
         status: string
-        details: {
-            savingsRate: number
-            emergencyFundMonths: number
-            hasAdequateEmergencyFund: boolean
-            savingsRateStatus: string
-        }
-        recommendations: string[]
     }
-
-    borrow: {
+    dti: {
         score: number
+        value: number
         status: string
-        details: {
-            debtToIncomeRatio: number
-            creditUtilizationRatio: number
-            totalDebt: number
-            debtStatus: string
-        }
-        recommendations: string[]
     }
-
-    plan: {
+    budgetAdherence: {
         score: number
+        value: number
         status: string
-        details: {
-            hasBudget: boolean
-            hasFinancialPlan: boolean
-            hasRetirementPlan: boolean
-            hasInsurance: boolean
-            retirementReadiness: number
-        }
-        recommendations: string[]
+    }
+    investmentRatio: {
+        score: number
+        value: number
+        status: string
     }
 }
 
-/**
- * FINANCIAL HEALTH NETWORK (FHN) - FinHealth Score®
- * Framework ini mengukur 4 dimensi kesehatan finansial
- */
-export function calculateFinHealthScore(data: FinancialData): FinancialHealthResult {
-    const spendScore = calculateSpendScore(data)
-    const saveScore = calculateSaveScore(data)
-    const borrowScore = calculateBorrowScore(data)
-    const planScore = calculatePlanScore(data)
+function scoreSavingsRate(rate: number): number {
+    if (rate >= 0.20) return 100;
+    if (rate >= 0.10) return 60 + ((rate - 0.10) / 0.10) * 40;
+    if (rate >= 0) return 30 + (rate / 0.10) * 30;
+    return 0;
+}
 
-    // Bobot sesuai FinHealth Score® methodology
+function scoreEmergencyFund(months: number): number {
+    if (months >= 6) return 100;
+    if (months >= 3) return 70 + ((months - 3) / 3) * 30;
+    if (months >= 1) return 30 + ((months - 1) / 2) * 40;
+    return Math.max(0, (months / 1) * 30);
+}
+
+function scoreDTI(dti: number): number {
+    if (dti <= 0) return 100;
+    if (dti <= 0.20) return 100 - (dti / 0.20) * 20;
+    if (dti <= 0.36) return 80 - ((dti - 0.20) / 0.16) * 20;
+    if (dti <= 0.43) return 60 - ((dti - 0.36) / 0.07) * 30;
+    return Math.max(0, 30 - ((dti - 0.43) / 0.20) * 30);
+}
+
+function scoreBudgetAdherence(budgets: { amount: number; spent: number }[]): number {
+    const totalBudget = budgets.reduce((s, b) => s + b.amount, 0);
+    if (totalBudget === 0) return 50; // netral jika belum ada budget dibuat
+    const overspend = budgets.reduce((s, b) => s + Math.max(0, b.spent - b.amount), 0);
+    const ratio = overspend / totalBudget;
+    return Math.max(0, 100 - ratio * 100);
+}
+
+function scoreInvestmentRatio(ratio: number): number {
+    if (ratio >= 0.30) return 100;
+    if (ratio >= 0.10) return 50 + ((ratio - 0.10) / 0.20) * 50;
+    if (ratio > 0) return 20 + (ratio / 0.10) * 30;
+    return 20;
+}
+
+const WEIGHTS = {
+    savingsRate: 0.30,
+    emergencyFund: 0.25,
+    dti: 0.20,
+    budgetAdherence: 0.15,
+    investmentRatio: 0.10,
+};
+
+export function calculateFinHealthScore(data: FinancialData): FinancialHealthResult {
+    const savingsRateVal = data.monthlyIncome > 0 ? (data.monthlyIncome - data.monthlyExpenses) / data.monthlyIncome : 0;
+    const emergencyFundMonthsVal = data.monthlyExpenses > 0 ? data.emergencyFund / data.monthlyExpenses : 0;
+    const dtiVal = data.monthlyIncome > 0 ? data.monthlyDebtPayments / data.monthlyIncome : 0;
+    const budgetsVal = data.budgets || [];
+    
+    const totalLiquid = data.emergencyFund; // cash/bank
+    const investmentRatioVal = data.investments + totalLiquid > 0 ? data.investments / (data.investments + totalLiquid) : 0;
+
+    const s1 = scoreSavingsRate(savingsRateVal);
+    const s2 = scoreEmergencyFund(emergencyFundMonthsVal);
+    const s3 = scoreDTI(dtiVal);
+    const s4 = scoreBudgetAdherence(budgetsVal);
+    const s5 = scoreInvestmentRatio(investmentRatioVal);
+
     const overallScore = Math.round(
-        (spendScore.score * 0.25) +
-        (saveScore.score * 0.30) +
-        (borrowScore.score * 0.25) +
-        (planScore.score * 0.20)
-    )
+        s1 * WEIGHTS.savingsRate +
+        s2 * WEIGHTS.emergencyFund +
+        s3 * WEIGHTS.dti +
+        s4 * WEIGHTS.budgetAdherence +
+        s5 * WEIGHTS.investmentRatio
+    );
 
     return {
         overallScore,
         status: getFinancialStatus(overallScore),
-        spend: spendScore,
-        save: saveScore,
-        borrow: borrowScore,
-        plan: planScore,
-    }
-}
-
-/**
- * DIMENSI 1: SPEND (Belanja) - 50/30/20 Rule
- * Berdasarkan teori Elizabeth Warren
- */
-function calculateSpendScore(data: FinancialData) {
-    const expenseRatio = (data.monthlyExpenses / data.monthlyIncome) * 100
-    const needsRatio = (data.needsExpenses / data.monthlyIncome) * 100
-    const wantsRatio = (data.wantsExpenses / data.monthlyIncome) * 100
-
-    let score = 0
-    const recommendations: string[] = []
-
-    // Scoring berdasarkan 50/30/20 rule
-    if (needsRatio <= 50) {
-        score += 40
-    } else if (needsRatio <= 60) {
-        score += 25
-        recommendations.push('Kurangi pengeluaran kebutuhan hingga ≤50% pemasukan')
-    } else {
-        score += 10
-        recommendations.push('Pengeluaran kebutuhan terlalu tinggi (>60%). Evaluasi biaya tetap seperti sewa/hipotek')
-    }
-
-    if (wantsRatio <= 30) {
-        score += 30
-    } else if (wantsRatio <= 40) {
-        score += 20
-        recommendations.push('Batasi pengeluaran keinginan hingga 30% pemasukan')
-    } else {
-        score += 5
-        recommendations.push('Pengeluaran keinginan sangat tinggi. Terapkan aturan 50/30/20')
-    }
-
-    if (expenseRatio < 100) {
-        score += 30
-    } else if (expenseRatio === 100) {
-        score += 15
-        recommendations.push('Anda hidup pas-pasan. Cari cara meningkatkan pemasukan')
-    } else {
-        score += 0
-        recommendations.push('Pengeluaran melebihi pemasukan! Segera buat budget dan kurangi pengeluaran')
-    }
-
-    const isLivingWithinMeans = expenseRatio <= 100
-
-    return {
-        score: Math.min(score, 100),
-        status: getDimensionStatus(score),
-        details: {
-            expenseToIncomeRatio: expenseRatio,
-            needsToIncomeRatio: needsRatio,
-            wantsToIncomeRatio: wantsRatio,
-            isLivingWithinMeans,
+        savingsRate: {
+            score: Math.round(s1),
+            value: savingsRateVal,
+            status: getDimensionStatus(s1)
         },
-        recommendations,
-    }
-}
-
-/**
- * DIMENSI 2: SAVE (Tabungan)
- * Berdasarkan Emergency Fund Theory & Savings Rate standards
- */
-function calculateSaveScore(data: FinancialData) {
-    const savingsRate = data.monthlyIncome > 0
-        ? (data.monthlySavings / data.monthlyIncome) * 100
-        : 0
-
-    const emergencyFundMonths = data.monthlyExpenses > 0
-        ? data.emergencyFund / data.monthlyExpenses
-        : 0
-
-    let score = 0
-    const recommendations: string[] = []
-
-    // Savings Rate scoring (Wade Pfau: 16.6%, FIRE: 50-70%)
-    if (savingsRate >= 20) {
-        score += 40
-    } else if (savingsRate >= 15) {
-        score += 30
-        recommendations.push('Tingkatkan tabungan ke 20% untuk keamanan finansial optimal')
-    } else if (savingsRate >= 10) {
-        score += 20
-        recommendations.push('Tabungan di bawah rekomendasi. Target minimal 15-20% pemasukan')
-    } else if (savingsRate > 0) {
-        score += 10
-        recommendations.push('Tabungan sangat rendah. Mulai dengan 10% dan tingkatkan bertahap')
-    } else {
-        score += 0
-        recommendations.push('Anda belum menabung. Mulai sisihkan minimal 10% pemasukan')
-    }
-
-    // Emergency Fund scoring (Dave Ramsey, Suze Orman)
-    if (emergencyFundMonths >= 6) {
-        score += 40
-    } else if (emergencyFundMonths >= 3) {
-        score += 25
-        recommendations.push('Dana darurat cukup, tapi tingkatkan ke 6 bulan untuk keamanan maksimal')
-    } else if (emergencyFundMonths >= 1) {
-        score += 15
-        recommendations.push('Dana darurat kurang. Target: 3-6 bulan pengeluaran')
-    } else {
-        score += 5
-        recommendations.push('Belum ada dana darurat! Prioritaskan membangun dana darurat 3-6 bulan')
-    }
-
-    // Additional savings score
-    if (data.retirementSavings > 0) {
-        score += 20
-    } else {
-        recommendations.push('Mulai menabung untuk pensiun sedini mungkin')
-    }
-
-    const savingsRateStatus = savingsRate >= 20 ? 'excellent'
-        : savingsRate >= 15 ? 'good'
-            : savingsRate >= 10 ? 'fair'
-                : 'poor'
-
-    return {
-        score: Math.min(score, 100),
-        status: getDimensionStatus(score),
-        details: {
-            savingsRate,
-            emergencyFundMonths,
-            hasAdequateEmergencyFund: emergencyFundMonths >= 3,
-            savingsRateStatus,
+        emergencyFund: {
+            score: Math.round(s2),
+            value: emergencyFundMonthsVal,
+            status: getDimensionStatus(s2)
         },
-        recommendations,
-    }
-}
-
-/**
- * DIMENSI 3: BORROW (Pinjaman)
- * Berdasarkan DTI standards industri keuangan
- */
-function calculateBorrowScore(data: FinancialData) {
-    // Debt-to-Income Ratio (DTI)
-    const dti = data.monthlyIncome > 0
-        ? (data.monthlyDebtPayments / data.monthlyIncome) * 100
-        : 0
-
-    let score = 0
-    const recommendations: string[] = []
-    let debtStatus = ''
-
-    // DTI scoring berdasarkan standar industri
-    if (dti <= 28) {
-        score += 50
-        debtStatus = 'Sangat sehat (DTI ≤28%)'
-    } else if (dti <= 36) {
-        score += 40
-        debtStatus = 'Sehat (DTI ≤36%)'
-        recommendations.push('DTI masih dalam batas sehat. Pertahankan!')
-    } else if (dti <= 43) {
-        score += 25
-        debtStatus = 'Cukup (DTI 36-43%)'
-        recommendations.push('Mulai kurangi utang. Target DTI ≤36%')
-    } else if (dti <= 50) {
-        score += 15
-        debtStatus = 'Berisiko (DTI 43-50%)'
-        recommendations.push('DTI tinggi! Prioritaskan pelunasan utang')
-    } else {
-        score += 5
-        debtStatus = 'Kritis (DTI >50%)'
-        recommendations.push('DTI sangat tinggi! Konsultasi dengan financial advisor')
-    }
-
-    // Credit utilization (jika ada credit card debt)
-    if (data.creditCardDebt > 0) {
-        const creditUtilization = data.monthlyIncome > 0
-            ? (data.creditCardDebt / (data.monthlyIncome * 12)) * 100
-            : 0
-
-        if (creditUtilization <= 30) {
-            score += 30
-        } else if (creditUtilization <= 50) {
-            score += 15
-            recommendations.push('Penggunaan kartu kredit cukup tinggi. Kurangi ke ≤30%')
-        } else {
-            score += 5
-            recommendations.push('Penggunaan kartu kredit sangat tinggi. Segera lunasi')
+        dti: {
+            score: Math.round(s3),
+            value: dtiVal,
+            status: getDimensionStatus(s3)
+        },
+        budgetAdherence: {
+            score: Math.round(s4),
+            value: budgetsVal.length > 0 ? 1 - (s4 / 100) : 0, // ini hanya aproksimasi
+            status: getDimensionStatus(s4)
+        },
+        investmentRatio: {
+            score: Math.round(s5),
+            value: investmentRatioVal,
+            status: getDimensionStatus(s5)
         }
-    } else {
-        score += 30 // No credit card debt is good
-    }
-
-    // Total debt load
-    if (data.totalDebt === 0) {
-        score += 20
-    } else if (data.totalDebt < data.monthlyIncome * 6) {
-        score += 10
-    } else {
-        recommendations.push('Total utang melebihi 6x pemasukan bulanan. Buat rencana pelunasan')
-    }
-
-    return {
-        score: Math.min(score, 100),
-        status: getDimensionStatus(score),
-        details: {
-            debtToIncomeRatio: dti,
-            creditUtilizationRatio: data.monthlyIncome > 0
-                ? (data.creditCardDebt / (data.monthlyIncome * 12)) * 100
-                : 0,
-            totalDebt: data.totalDebt,
-            debtStatus,
-        },
-        recommendations,
-    }
-}
-
-/**
- * DIMENSI 4: PLAN (Perencanaan)
- * Berdasarkan Financial Planning standards
- */
-function calculatePlanScore(data: FinancialData) {
-    let score = 0
-    const recommendations: string[] = []
-
-    // Budget
-    if (data.hasBudget) {
-        score += 20
-    } else {
-        recommendations.push('Buat budget bulanan untuk melacak pemasukan dan pengeluaran')
-    }
-
-    // Financial Plan
-    if (data.hasFinancialPlan) {
-        score += 20
-    } else {
-        recommendations.push('Buat rencana keuangan jangka pendek dan panjang')
-    }
-
-    // Retirement Plan
-    if (data.hasRetirementPlan) {
-        score += 20
-    } else {
-        recommendations.push('Mulai rencanakan dana pensiun. Semakin awal semakin baik')
-    }
-
-    // Insurance
-    let insuranceScore = 0
-    if (data.hasHealthInsurance) insuranceScore += 10
-    if (data.hasLifeInsurance) insuranceScore += 10
-    if (data.hasDisabilityInsurance) insuranceScore += 10
-
-    score += insuranceScore
-
-    if (insuranceScore < 30) {
-        recommendations.push('Lengkapi perlindungan asuransi (kesehatan, jiwa, disabilitas)')
-    }
-
-    // Will/Estate Planning
-    if (data.hasWill) {
-        score += 10
-    } else if (data.totalAssets > 0) {
-        recommendations.push('Pertimbangkan membuat surat wasiat untuk melindungi aset')
-    }
-
-    // Retirement Readiness (simplified)
-    const retirementReadiness = data.monthlyIncome > 0
-        ? (data.retirementSavings / (data.monthlyIncome * 12 * 25)) * 100
-        : 0
-
-    return {
-        score: Math.min(score, 100),
-        status: getDimensionStatus(score),
-        details: {
-            hasBudget: data.hasBudget,
-            hasFinancialPlan: data.hasFinancialPlan,
-            hasRetirementPlan: data.hasRetirementPlan,
-            hasInsurance: insuranceScore >= 20,
-            retirementReadiness,
-        },
-        recommendations,
-    }
+    };
 }
 
 /**
@@ -418,9 +185,9 @@ function getDimensionStatus(score: number): string {
  */
 function getFinancialStatus(score: number): 'excellent' | 'good' | 'fair' | 'poor' | 'critical' {
     if (score >= 80) return 'excellent'
-    if (score >= 60) return 'good'
-    if (score >= 40) return 'fair'
-    if (score >= 20) return 'poor'
+    if (score >= 65) return 'good'
+    if (score >= 50) return 'fair'
+    if (score >= 35) return 'poor'
     return 'critical'
 }
 
@@ -618,19 +385,19 @@ export function generateFinancialReport(data: FinancialData) {
         summary.urgentActions.push('⚠️ Pengeluaran melebihi pemasukan! Segera buat budget')
     }
 
-    if (finHealth.save.details.emergencyFundMonths < 3) {
+    if (finHealth.emergencyFund.value < 3) {
         summary.urgentActions.push('⚠️ Dana darurat kurang dari 3 bulan')
     }
 
-    if (dti.dti > 43) {
+    if (finHealth.dti.value > 43) {
         summary.urgentActions.push('⚠️ DTI di atas 43%, prioritaskan pelunasan utang')
     }
 
-    if (finHealth.spend.details.isLivingWithinMeans) {
-        summary.strengths.push('✅ Hidup sesuai kemampuan')
+    if (data.monthlyExpenses <= data.monthlyIncome) {
+        summary.strengths.push('✅ Hidup sesuai kemampuan (pengeluaran tidak melebihi pendapatan)')
     }
 
-    if (finHealth.save.details.savingsRate >= 20) {
+    if (finHealth.savingsRate.value >= 20) {
         summary.strengths.push('✅ Tabungan rate di atas 20%')
     }
 

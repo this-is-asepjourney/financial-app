@@ -67,10 +67,11 @@ export default function FinancialHealthPage() {
                             score={healthData.overallScore}
                             status={healthData.status}
                             breakdown={{
-                                spend: healthData.spend.score,
-                                save: healthData.save.score,
-                                borrow: healthData.borrow.score,
-                                plan: healthData.plan.score
+                                savingsRate: healthData.savingsRate.score,
+                                emergencyFund: healthData.emergencyFund.score,
+                                dti: healthData.dti.score,
+                                budgetAdherence: healthData.budgetAdherence.score,
+                                investmentRatio: healthData.investmentRatio.score
                             }}
                         />
                     )}
@@ -88,10 +89,10 @@ export default function FinancialHealthPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
-                                    {healthData?.save.details.emergencyFundMonths.toFixed(1)} bulan
+                                    {healthData?.emergencyFund.value.toFixed(1)} bulan
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    {healthData && healthData.save.details.emergencyFundMonths >= 6 ? (
+                                    {healthData && healthData.emergencyFund.value >= 6 ? (
                                         <span className="text-green-600 flex items-center gap-1">
                                             <CheckCircle className="h-3 w-3" />
                                             Dana darurat mencukupi

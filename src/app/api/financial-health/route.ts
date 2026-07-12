@@ -63,8 +63,9 @@ export async function GET(request: Request) {
             monthlyIncome,
             monthlyExpenses,
             expensesByCategory,
-            totalDebt,
+            debts,
             investments,
+            budgets,
         ] = await Promise.all([
             // Monthly income
             prisma.transaction.aggregate({
@@ -82,13 +83,15 @@ export async function GET(request: Request) {
                 where: { userId, type: 'expense', date: { gte: start, lte: end }, categoryId: { not: null } },
                 _sum: { amount: true }
             }),
-            // Placeholder for actual Debt tracking
-            Promise.resolve({ _sum: { amount: 0 } }),
+            // Debt tracking
+            prisma.debt.findMany({ where: { userId } }),
             // Investments
             prisma.investment.aggregate({
                 where: { userId },
                 _sum: { currentValue: true, amount: true },
             }),
+            // Budgets for the current month
+            prisma.budget.findMany({ where: { userId, month: start } })
         ])
 
         const monthlyIncomeAmount = monthlyIncome._sum.amount || 0
@@ -96,12 +99,18 @@ export async function GET(request: Request) {
         const investmentTotal = investments._sum.currentValue || investments._sum.amount || 0
         totalAssets += investmentTotal
 
-        // 3. Classify Needs vs Wants heuristically
         let needsExpenses = 0
         let wantsExpenses = 0
         let monthlyDebtPayments = 0
         let insurancePayments = 0
         let retirementPayments = 0
+
+        // Calculate debts explicitly from Debt model
+        let totalDebtAmount = 0
+        debts.forEach(debt => {
+            totalDebtAmount += debt.remainingAmount || debt.totalAmount;
+            monthlyDebtPayments += debt.monthlyPayment;
+        });
 
         if (expensesByCategory.length > 0) {
             const categories = await prisma.category.findMany({
@@ -118,15 +127,18 @@ export async function GET(request: Request) {
                 const nameLower = (cat?.name || '').toLowerCase()
                 
                 const isNeed = needsKeywords.some(keyword => nameLower.includes(keyword))
-                const isDebt = debtKeywords.some(keyword => nameLower.includes(keyword))
+                const isDebtCategory = cat?.isDebtPayment || debtKeywords.some(keyword => nameLower.includes(keyword))
                 const isInsurance = insuranceKeywords.some(keyword => nameLower.includes(keyword))
                 const isRetirement = retirementKeywords.some(keyword => nameLower.includes(keyword))
 
-                if (isDebt) monthlyDebtPayments += amount
+                // If not tracked in explicit Debt model, add from transactions
+                if (isDebtCategory && debts.length === 0) {
+                    monthlyDebtPayments += amount
+                }
                 if (isInsurance) insurancePayments += amount
                 if (isRetirement) retirementPayments += amount
 
-                if (isNeed || isDebt || isInsurance) {
+                if (isNeed || isDebtCategory || isInsurance) {
                     needsExpenses += amount
                 } else {
                     wantsExpenses += amount
@@ -147,7 +159,7 @@ export async function GET(request: Request) {
             totalSavings: totalAssets, // Liquid Assets + Investments
             emergencyFund: totalCashAndBank, // Only highly liquid cash/bank
             monthlySavings: monthlyIncomeAmount - monthlyExpenseAmount,
-            totalDebt: (totalDebt._sum.amount || 0) + (monthlyDebtPayments * 12), // Estimate total debt based on 12 months of payments if explicit tracking is missing
+            totalDebt: totalDebtAmount > 0 ? totalDebtAmount : monthlyDebtPayments * 12, // Use explicit debt or estimate
             monthlyDebtPayments: monthlyDebtPayments, 
             creditCardDebt: 0,
             totalAssets: totalAssets,
@@ -160,6 +172,7 @@ export async function GET(request: Request) {
             hasFinancialPlan: true,
             hasRetirementPlan: retirementPayments > 0,
             hasWill: false,
+            budgets: budgets,
         }
 
         // 5. Calculate Score
@@ -176,18 +189,18 @@ export async function GET(request: Request) {
                 totalIncome: monthlyIncomeAmount,
                 totalExpenses: monthlyExpenseAmount,
                 totalSavings: financialData.totalSavings,
-                savingsRate: healthScore.save.details.savingsRate,
-                emergencyFundMonths: healthScore.save.details.emergencyFundMonths,
-                debtToIncomeRatio: healthScore.borrow.details.debtToIncomeRatio,
+                savingsRate: healthScore.savingsRate.value,
+                emergencyFundMonths: healthScore.emergencyFund.value,
+                debtToIncomeRatio: healthScore.dti.value,
                 financialScore: healthScore.overallScore,
             },
             update: {
                 totalIncome: monthlyIncomeAmount,
                 totalExpenses: monthlyExpenseAmount,
                 totalSavings: financialData.totalSavings,
-                savingsRate: healthScore.save.details.savingsRate,
-                emergencyFundMonths: healthScore.save.details.emergencyFundMonths,
-                debtToIncomeRatio: healthScore.borrow.details.debtToIncomeRatio,
+                savingsRate: healthScore.savingsRate.value,
+                emergencyFundMonths: healthScore.emergencyFund.value,
+                debtToIncomeRatio: healthScore.dti.value,
                 financialScore: healthScore.overallScore,
             },
         })
