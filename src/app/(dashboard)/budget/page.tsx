@@ -352,9 +352,12 @@ export default function BudgetPage() {
                                 <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">Rp</span>
                                     <Input
-                                        type="number"
-                                        value={formAmount}
-                                        onChange={(e) => setFormAmount(e.target.value)}
+                                        type="text"
+                                        value={formAmount ? Number(formAmount).toLocaleString('id-ID') : ''}
+                                        onChange={(e) => {
+                                            const rawValue = e.target.value.replace(/\D/g, '')
+                                            setFormAmount(rawValue)
+                                        }}
                                         placeholder="0"
                                         className="pl-9"
                                     />
@@ -431,9 +434,12 @@ export default function BudgetPage() {
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">Rp</span>
                                 <Input
-                                    type="number"
-                                    value={payAmount}
-                                    onChange={(e) => setPayAmount(e.target.value)}
+                                    type="text"
+                                    value={payAmount ? Number(payAmount).toLocaleString('id-ID') : ''}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, '')
+                                        setPayAmount(rawValue)
+                                    }}
                                     className="pl-9 text-lg"
                                 />
                             </div>

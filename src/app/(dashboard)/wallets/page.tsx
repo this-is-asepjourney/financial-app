@@ -225,13 +225,20 @@ export default function WalletsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Jumlah Transfer</Label>
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        value={transferData.amount || ''}
-                                        onChange={(e) => setTransferData({ ...transferData, amount: Number(e.target.value) })}
-                                        required
-                                    />
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">Rp</span>
+                                        <Input
+                                            type="text"
+                                            value={transferData.amount ? transferData.amount.toLocaleString('id-ID') : ''}
+                                            onChange={(e) => {
+                                                const rawValue = e.target.value.replace(/\D/g, '')
+                                                const numericValue = rawValue ? parseInt(rawValue, 10) : 0
+                                                setTransferData({ ...transferData, amount: numericValue })
+                                            }}
+                                            className="pl-9"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Catatan</Label>
@@ -289,14 +296,21 @@ export default function WalletsPage() {
                             {!editingWallet && (
                                 <div className="space-y-2">
                                     <Label htmlFor="balance">Saldo Awal</Label>
-                                    <Input
-                                        id="balance"
-                                        type="number"
-                                        min="0"
-                                        value={formData.balance}
-                                        onChange={(e) => setFormData({ ...formData, balance: Number(e.target.value) })}
-                                        required
-                                    />
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">Rp</span>
+                                        <Input
+                                            id="balance"
+                                            type="text"
+                                            value={formData.balance ? formData.balance.toLocaleString('id-ID') : ''}
+                                            onChange={(e) => {
+                                                const rawValue = e.target.value.replace(/\D/g, '')
+                                                const numericValue = rawValue ? parseInt(rawValue, 10) : 0
+                                                setFormData({ ...formData, balance: numericValue })
+                                            }}
+                                            className="pl-9"
+                                            required
+                                        />
+                                    </div>
                                     <p className="text-xs text-muted-foreground">
                                         Catatan: Saldo dompet akan otomatis menyesuaikan saat Anda mencatat transaksi.
                                     </p>

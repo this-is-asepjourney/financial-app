@@ -384,15 +384,20 @@ export default function GoalsPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Target Nominal (Rp)</label>
-                            <input
-                                required
-                                type="number"
-                                min="1000"
-                                value={formTarget}
-                                onChange={e => setFormTarget(e.target.value)}
-                                placeholder="Cth: 15000000"
-                                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-medium">Rp</span>
+                                <input
+                                    required
+                                    type="text"
+                                    value={formTarget ? Number(formTarget).toLocaleString('id-ID') : ''}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, '')
+                                        setFormTarget(rawValue)
+                                    }}
+                                    placeholder="0"
+                                    className="w-full pl-9 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Tenggat Waktu (Opsional)</label>
@@ -446,15 +451,20 @@ export default function GoalsPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Nominal Disetor (Rp)</label>
-                            <input
-                                required
-                                type="number"
-                                min="100"
-                                value={topUpAmount}
-                                onChange={e => setTopUpAmount(e.target.value)}
-                                placeholder="Masukkan nominal..."
-                                className="w-full px-3 py-2 text-lg font-semibold border-2 border-indigo-100 rounded-md focus:border-indigo-500 focus:ring-0 outline-none"
-                            />
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-lg">Rp</span>
+                                <input
+                                    required
+                                    type="text"
+                                    value={topUpAmount ? Number(topUpAmount).toLocaleString('id-ID') : ''}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, '')
+                                        setTopUpAmount(rawValue)
+                                    }}
+                                    placeholder="0"
+                                    className="w-full pl-10 pr-3 py-2 text-lg font-semibold border-2 border-indigo-100 rounded-md focus:border-indigo-500 focus:ring-0 outline-none"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700">Sumber Dana</label>
