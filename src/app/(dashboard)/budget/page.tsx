@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '@/store/auth-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import {
     Dialog,
     DialogContent,
@@ -31,7 +31,6 @@ import {
     AlertTriangle,
     CheckCircle,
     TrendingDown,
-    Wallet,
     CalendarClock,
     CreditCard
 } from 'lucide-react'
@@ -234,8 +233,8 @@ export default function BudgetPage() {
                 const err = await response.json()
                 throw new Error(err.error)
             }
-        } catch (error: any) {
-            toast({ title: 'Error', description: error.message || 'Gagal membayar tagihan', variant: 'destructive' })
+        } catch (error) {
+            toast({ title: 'Error', description: (error as Error).message || 'Gagal membayar tagihan', variant: 'destructive' })
         } finally {
             setIsSubmittingPay(false)
         }
@@ -268,8 +267,8 @@ export default function BudgetPage() {
             } else {
                 throw new Error('Gagal menghapus budget')
             }
-        } catch (error: any) {
-            toast({ title: 'Error', description: error.message, variant: 'destructive' })
+        } catch (error) {
+            toast({ title: 'Error', description: (error as Error).message, variant: 'destructive' })
         }
     }
 

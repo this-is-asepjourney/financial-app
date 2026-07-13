@@ -8,20 +8,25 @@ export async function GET(request: Request) {
         const userId = searchParams.get('userId')
         const month = searchParams.get('month')
         const type = searchParams.get('type') || 'expense'
+        const timeframe = searchParams.get('timeframe')
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
         }
 
-        const date = month ? new Date(month) : new Date()
-        const { start, end } = getMonthRange(date)
+        let dateFilter = {}
+        if (timeframe !== 'all') {
+            const date = month ? new Date(month) : new Date()
+            const { start, end } = getMonthRange(date)
+            dateFilter = { date: { gte: start, lte: end } }
+        }
 
         const categorySpending = await prisma.transaction.groupBy({
             by: ['categoryId'],
             where: {
                 userId,
                 type,
-                date: { gte: start, lte: end },
+                ...dateFilter,
             },
             _sum: { amount: true },
             _count: true,

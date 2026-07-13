@@ -34,6 +34,13 @@ interface DashboardData {
         percentage: number
         color: string
     }[]
+    allTimeCategoryData: {
+        categoryName: string
+        totalAmount: number
+        percentage: number
+        color: string
+    }[]
+    allTimeTotalExpenses: number
     healthScore: {
         score: number
         status: 'excellent' | 'good' | 'fair' | 'poor'
@@ -54,16 +61,18 @@ export default function DashboardPage() {
         }
         try {
             // Fetch all dashboard data
-            const [summaryRes, categoryRes, healthRes, walletsRes] = await Promise.all([
+            const [summaryRes, categoryRes, healthRes, walletsRes, allTimeCategoryRes] = await Promise.all([
                 fetch(`/api/reports/monthly-summary?userId=${user?.id}`),
                 fetch(`/api/reports/category-analysis?userId=${user?.id}`),
                 fetch(`/api/financial-health?userId=${user?.id}`),
-                fetch(`/api/wallets?userId=${user?.id}`)
+                fetch(`/api/wallets?userId=${user?.id}`),
+                fetch(`/api/reports/category-analysis?userId=${user?.id}&timeframe=all`)
             ])
 
             const summary = await summaryRes.json()
             const category = await categoryRes.json()
             const health = await healthRes.json()
+            const allTimeCategory = await allTimeCategoryRes.json()
             
             if (walletsRes.ok) {
                 const walletsData = await walletsRes.json()
@@ -83,6 +92,8 @@ export default function DashboardPage() {
                 },
                 monthlyData,
                 categoryData: category.analysis || [],
+                allTimeCategoryData: allTimeCategory.analysis || [],
+                allTimeTotalExpenses: allTimeCategory.totalAmount || 0,
                 healthScore: {
                     score: health.health?.overallScore || 0,
                     status: health.health?.status || 'fair',
@@ -194,6 +205,34 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <CategoryBreakdown data={data?.categoryData || []} />
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* All-Time Data */}
+            <h2 className="text-2xl font-bold mt-8 mb-4">Ringkasan Seluruh Waktu</h2>
+            <div className="grid lg:grid-cols-2 gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Total Pengeluaran (Semua Waktu)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col justify-center items-center h-[300px]">
+                        <TrendingDown className="h-16 w-16 text-red-500 mb-4 opacity-80" />
+                        <div className="text-4xl font-bold text-red-600">
+                            {formatCurrency(data?.allTimeTotalExpenses || 0)}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2">
+                            Sejak transaksi pertama hingga saat ini
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pengeluaran per Kategori (Semua Waktu)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <CategoryBreakdown data={data?.allTimeCategoryData || []} />
                     </CardContent>
                 </Card>
             </div>

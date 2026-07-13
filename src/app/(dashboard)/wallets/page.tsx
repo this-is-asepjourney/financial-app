@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,7 +40,7 @@ export default function WalletsPage() {
     })
     const [isTransferring, setIsTransferring] = useState(false)
 
-    const fetchWallets = async () => {
+    const fetchWallets = useCallback(async () => {
         if (!user) return
         try {
             const res = await fetch(`/api/wallets?userId=${user.id}`)
@@ -53,11 +53,14 @@ export default function WalletsPage() {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [user])
 
     useEffect(() => {
-        fetchWallets()
-    }, [user])
+        const timer = setTimeout(() => {
+            fetchWallets()
+        }, 0)
+        return () => clearTimeout(timer)
+    }, [fetchWallets])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -90,6 +93,7 @@ export default function WalletsPage() {
             setFormData({ name: '', type: 'bank', balance: 0 })
             fetchWallets()
         } catch (error) {
+            console.error(error)
             toast({
                 variant: 'destructive',
                 title: 'Error',
@@ -133,6 +137,7 @@ export default function WalletsPage() {
             setTransferData({ fromWalletId: '', toWalletId: '', amount: 0, description: 'Transfer Dana' })
             fetchWallets()
         } catch (error) {
+            console.error(error)
             toast({ variant: 'destructive', title: 'Error', description: 'Gagal melakukan transfer' })
         } finally {
             setIsTransferring(false)
@@ -152,6 +157,7 @@ export default function WalletsPage() {
             })
             fetchWallets()
         } catch (error) {
+            console.error(error)
             toast({
                 variant: 'destructive',
                 title: 'Error',
