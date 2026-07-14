@@ -9,12 +9,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { loginSchema, LoginInput } from '@/lib/validation'
-import { useAuthStore } from '@/store/auth-store'
 import { TrendingUp, Eye, EyeOff } from 'lucide-react'
+import { signIn } from 'next-auth/react'
 
 export default function LoginPage() {
     const router = useRouter()
-    const login = useAuthStore((state) => state.login)
     const [error, setError] = useState('')
     const [showPassword, setShowPassword] = useState(false)
 
@@ -29,20 +28,20 @@ export default function LoginPage() {
     const onSubmit = async (data: LoginInput) => {
         try {
             setError('')
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+            
+            const result = await signIn('credentials', {
+                redirect: false,
+                email: data.email,
+                password: data.password,
             })
 
-            const result = await response.json()
-
-            if (!response.ok) {
-                throw new Error(result.error)
+            if (result?.error) {
+                setError(result.error)
+                return
             }
 
-            login(result.user, result.token)
             router.push('/dashboard')
+            router.refresh()
         } catch (err: unknown) {
             setError((err as Error).message)
         }

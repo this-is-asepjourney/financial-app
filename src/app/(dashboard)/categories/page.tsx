@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -85,7 +85,8 @@ const PRESET_COLORS = [
 ]
 
 export default function CategoriesPage() {
-    const user = useAuthStore((state) => state.user)
+    const { data: session } = useSession()
+    const user = session?.user
     const { toast } = useToast()
     const [categories, setCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(true)

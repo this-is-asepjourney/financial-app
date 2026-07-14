@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
         const type = searchParams.get('type')
-
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
-
         const where: { userId: string; type?: string } = { userId }
         if (type) where.type = type
 
@@ -57,9 +57,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const body = await request.json()
-        const { userId, name, type, icon, color, budget } = body
+        const { name, type, icon, color, budget } = body
 
         if (!name || !type) {
             return NextResponse.json(

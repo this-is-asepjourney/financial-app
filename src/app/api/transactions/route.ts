@@ -1,23 +1,23 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { transactionSchema } from '@/lib/validation'
 import { getMonthRange } from '@/lib/utils'
 
 export async function GET(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
         const month = searchParams.get('month')
         const type = searchParams.get('type')
         const categoryId = searchParams.get('categoryId')
         const search = searchParams.get('search')
         const page = parseInt(searchParams.get('page') || '1')
         const limit = parseInt(searchParams.get('limit') || '20')
-
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
-
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where: any = { userId }
 
@@ -93,7 +93,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const body = await request.json()
         const validation = transactionSchema.safeParse(body)
 
@@ -105,8 +109,6 @@ export async function POST(request: Request) {
         }
 
         const { amount, type, categoryId, walletId, toWalletId, description, date, isRecurring, recurringType } = validation.data
-        const userId = body.userId
-
         const transaction = await prisma.transaction.create({
             data: {
                 userId,

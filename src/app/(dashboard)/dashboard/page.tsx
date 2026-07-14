@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart'
 import { CategoryBreakdown } from '@/components/charts/CategoryBreakdown'
@@ -51,7 +51,8 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
-    const user = useAuthStore((state) => state.user)
+    const { data: session } = useSession()
+    const user = session?.user
     const [data, setData] = useState<DashboardData | null>(null)
     const [totalWalletBalance, setTotalWalletBalance] = useState(0)
     const [loading, setLoading] = useState(true)

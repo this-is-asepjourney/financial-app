@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -64,7 +64,8 @@ interface UserWallet {
 }
 
 export default function BudgetPage() {
-    const user = useAuthStore((state) => state.user)
+    const { data: session } = useSession()
+    const user = session?.user
     const { toast } = useToast()
     const [budgets, setBudgets] = useState<Budget[]>([])
     const [categories, setCategories] = useState<Category[]>([])

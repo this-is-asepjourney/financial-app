@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
         const month = searchParams.get('month')
-
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
-
         const where: any = { userId }
         if (month) {
             where.month = new Date(month)
@@ -112,11 +112,15 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    try {
-        const body = await request.json()
-        const { userId, categoryId, amount, month, dueDate, isRecurring } = body
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
 
-        if (!userId || !categoryId || !amount || !month) {
+        const body = await request.json()
+        const { categoryId, amount, month, dueDate, isRecurring } = body
+
+        if (!categoryId || !amount || !month) {
             return NextResponse.json(
                 { error: 'Data tidak lengkap' },
                 { status: 400 }

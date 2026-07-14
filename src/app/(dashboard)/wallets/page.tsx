@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Wallet as WalletIcon, CreditCard, Banknote, Plus, Trash2, Edit2, ArrowRightLeft } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { useToast } from '@/components/ui/use-toast'
 
 interface Wallet {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, Target, Flame, Star, Flag, Trophy, TrendingUp, Calendar } from 'lucide-react'
@@ -21,7 +21,8 @@ interface Goal {
 }
 
 export default function GoalsPage() {
-    const user = useAuthStore((state) => state.user)
+    const { data: session } = useSession()
+    const user = session?.user
     const { toast } = useToast()
     
     const [goals, setGoals] = useState<Goal[]>([])

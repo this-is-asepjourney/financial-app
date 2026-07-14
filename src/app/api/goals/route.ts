@@ -1,16 +1,17 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { goalSchema } from '@/lib/validation'
 
 export async function GET(request: Request) {
-    try {
-        const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
-        const status = searchParams.get('status')
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
 
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
+        const { searchParams } = new URL(request.url)
+        const status = searchParams.get('status')
         const where: { userId: string; status?: string } = { userId }
         if (status && status !== 'all') where.status = status
 
@@ -30,7 +31,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const body = await request.json()
         const validation = goalSchema.safeParse(body)
 
@@ -42,8 +47,6 @@ export async function POST(request: Request) {
         }
 
         const { name, targetAmount, currentAmount, deadline, priority } = validation.data
-        const userId = body.userId
-
         const goal = await prisma.financialGoal.create({
             data: {
                 userId,

@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { walletSchema } from '@/lib/validation'
 
 export async function GET(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const { searchParams } = new URL(request.url)
-        const userId = searchParams.get('userId')
-
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
-
         const wallets = await prisma.wallet.findMany({
             where: { userId },
             orderBy: { createdAt: 'asc' },
@@ -54,7 +54,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-    try {
+        try {
+        const session = await getServerSession(authOptions)
+        if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        const userId = session.user.id
+
         const body = await request.json()
         const validation = walletSchema.safeParse(body)
 
@@ -66,12 +70,6 @@ export async function POST(request: Request) {
         }
 
         const { name, type, balance } = validation.data
-        const userId = body.userId
-
-        if (!userId) {
-            return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
-        }
-
         const wallet = await prisma.wallet.create({
             data: {
                 userId,

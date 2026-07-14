@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FinancialScoreGauge } from '@/components/charts/FinancialScoreGauge'
 import { formatCurrency } from '@/lib/utils'
@@ -17,7 +17,8 @@ import {
 import { FinancialHealthResult, FinancialData } from '@/lib/financial-calculation'
 
 export default function FinancialHealthPage() {
-    const user = useAuthStore((state) => state.user)
+    const { data: session } = useSession()
+    const user = session?.user
     const [healthData, setHealthData] = useState<FinancialHealthResult | null>(null)
     const [finData, setFinData] = useState<FinancialData | null>(null)
     const [loading, setLoading] = useState(true)

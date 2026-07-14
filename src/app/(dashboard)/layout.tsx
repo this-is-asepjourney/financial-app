@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useAuthStore } from '@/store/auth-store'
+import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -120,7 +120,7 @@ export default function DashboardLayout({
     }, [])
 
     const handleLogout = () => {
-        logout()
+        signOut({ callbackUrl: '/' })
         router.push('/auth/login')
     }
 
