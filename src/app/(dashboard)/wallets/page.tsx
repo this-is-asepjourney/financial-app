@@ -20,7 +20,8 @@ interface Wallet {
 }
 
 export default function WalletsPage() {
-    const { user } = useAuthStore()
+    const { data: session } = useSession()
+    const user = session?.user
     const { toast } = useToast()
     const [wallets, setWallets] = useState<Wallet[]>([])
     const [isLoading, setIsLoading] = useState(true)

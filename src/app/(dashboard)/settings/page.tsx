@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/select'
 
 export default function SettingsPage() {
-    const { user, updateUser } = useAuthStore()
+    const { data: session, update: updateSession } = useSession()
+    const user = session?.user
     const { toast } = useToast()
     
     const [activeTab, setActiveTab] = useState<'profile' | 'finance' | 'security'>('profile')
@@ -78,11 +79,15 @@ export default function SettingsPage() {
             }
 
             // Update local store with updated user data
-            updateUser({
-                name: data.user.name,
-                email: data.user.email,
-                monthlyIncome: data.user.monthlyIncome,
-                currency: data.user.currency,
+            await updateSession({
+                ...session,
+                user: {
+                    ...session?.user,
+                    name: data.user.name,
+                    email: data.user.email,
+                    monthlyIncome: data.user.monthlyIncome,
+                    currency: data.user.currency,
+                }
             })
 
             toast({

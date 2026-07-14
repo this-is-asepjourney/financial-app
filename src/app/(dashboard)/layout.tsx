@@ -110,7 +110,8 @@ export default function DashboardLayout({
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const pathname = usePathname()
     const router = useRouter()
-    const { user, logout } = useAuthStore()
+    const { data: session } = useSession()
+    const user = session?.user
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
 

@@ -28,7 +28,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function ReportsPage() {
-    const { user } = useAuthStore()
+    const { data: session } = useSession()
+    const user = session?.user
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)

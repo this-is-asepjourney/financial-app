@@ -34,6 +34,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          monthlyIncome: user.monthlyIncome,
+          currency: user.currency,
         }
       }
     })
@@ -46,15 +48,24 @@ export const authOptions: NextAuthOptions = {
     signIn: "/auth/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
+        token.monthlyIncome = user.monthlyIncome
+        token.currency = user.currency
+      }
+      if (trigger === "update" && session?.user) {
+        token.name = session.user.name
+        token.monthlyIncome = session.user.monthlyIncome
+        token.currency = session.user.currency
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
+        session.user.monthlyIncome = token.monthlyIncome as number | null
+        session.user.currency = token.currency as string | null
       }
       return session
     }
