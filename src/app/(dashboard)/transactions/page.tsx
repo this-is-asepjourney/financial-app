@@ -33,6 +33,8 @@ import {
     ChevronLeft,
     ChevronRight,
     ArrowRightLeft,
+    Wallet,
+    Calendar,
 } from 'lucide-react'
 import { TransactionForm } from '@/components/forms/TransactionForm'
 import { useToast } from '@/components/ui/use-toast'
@@ -349,38 +351,50 @@ export default function TransactionsPage() {
                             {transactions.map((transaction) => (
                                 <div
                                     key={transaction.id}
-                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors gap-4 sm:gap-0"
+                                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-muted/20 border rounded-lg hover:bg-muted/40 transition-colors gap-4 sm:gap-0"
                                 >
                                     <div className="flex items-center space-x-4 w-full sm:w-auto">
                                         <div
-                                            className="w-10 h-10 rounded-full flex items-center justify-center"
-                                            style={{ backgroundColor: transaction.category?.color + '20' }}
+                                            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                                            style={{ backgroundColor: transaction.category?.color ? transaction.category.color + '20' : 'rgba(0,0,0,0.05)' }}
                                         >
                                             {transaction.type === 'income' ? (
-                                                <TrendingUp className="h-5 w-5 text-green-600" />
+                                                <TrendingUp className="h-6 w-6 text-green-600" />
                                             ) : transaction.type === 'expense' ? (
-                                                <TrendingDown className="h-5 w-5 text-red-600" />
+                                                <TrendingDown className="h-6 w-6 text-red-600" />
                                             ) : (
-                                                <ArrowRightLeft className="h-5 w-5 text-purple-600" />
+                                                <ArrowRightLeft className="h-6 w-6 text-purple-600" />
                                             )}
                                         </div>
                                         <div>
-                                            <p className="font-medium">
-                                                {transaction.description || 'Transaksi'}
+                                            <p className="font-semibold text-base">
+                                                {transaction.description || (transaction.type === 'transfer' ? 'Transfer Dana' : 'Transaksi')}
                                             </p>
-                                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                                <span>
+                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
+                                                <span className="flex items-center gap-1.5">
+                                                    <Calendar className="h-3.5 w-3.5" />
+                                                    {formatDate(transaction.date)}
+                                                </span>
+                                                <span className="flex items-center gap-1.5">
+                                                    {transaction.type === 'transfer' ? (
+                                                        <ArrowRightLeft className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: transaction.category?.color || '#cbd5e1' }} />
+                                                    )}
                                                     {transaction.type === 'transfer' 
-                                                        ? `${transaction.wallet?.name || 'Dompet'} → ${transaction.toWallet?.name || 'Dompet'}`
+                                                        ? 'Transfer'
                                                         : (transaction.category?.name || 'Tanpa Kategori')}
                                                 </span>
-                                                <span>•</span>
-                                                <span>{formatDate(transaction.date)}</span>
+                                                <span className="flex items-center gap-1.5">
+                                                    <Wallet className="h-3.5 w-3.5" />
+                                                    {transaction.type === 'transfer' 
+                                                        ? `${transaction.wallet?.name || '?'} → ${transaction.toWallet?.name || '?'}`
+                                                        : (transaction.wallet?.name || 'Tanpa Dompet')}
+                                                </span>
                                                 {transaction.isRecurring && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span className="text-blue-600">Recurring</span>
-                                                    </>
+                                                    <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs font-medium border border-blue-200">
+                                                        Recurring
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
