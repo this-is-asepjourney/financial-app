@@ -101,6 +101,22 @@ export async function GET(request: Request) {
             }
         }).sort((a, b) => b.amount - a.amount)
 
+        // Fetch detailed transactions for the month
+        const transactions = await prisma.transaction.findMany({
+            where: {
+                userId,
+                date: { gte: start, lte: end },
+                type: { in: ['income', 'expense'] }
+            },
+            include: {
+                category: true,
+                wallet: true
+            },
+            orderBy: {
+                date: 'desc'
+            }
+        })
+
         return NextResponse.json({
             summary: {
                 month: start,
@@ -116,7 +132,8 @@ export async function GET(request: Request) {
                 },
             },
             history,
-            expensesByCategory
+            expensesByCategory,
+            transactions
         })
     } catch (error) {
         console.error('Error generating monthly summary:', error)

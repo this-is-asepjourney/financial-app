@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft } from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft, Wallet, Calendar, Tag, FileText } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { useAuthStore } from '@/store/auth-store'
 import { formatCurrency } from '@/lib/utils'
@@ -31,6 +31,7 @@ export default function ReportsPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense')
 
     useEffect(() => {
         if (!user) return
@@ -64,10 +65,11 @@ export default function ReportsPage() {
 
     if (!data) return <p className="text-muted-foreground">Gagal memuat data laporan.</p>
 
-    const { summary, history, expensesByCategory } = data
+    const { summary, history, expensesByCategory, transactions = [] } = data
 
-
-
+    // Filter transactions based on active tab
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const filteredTransactions = transactions.filter((t: any) => t.type === activeTab)
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -204,6 +206,106 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Transaction Details */}
+            <Card className="border-muted shadow-sm">
+                <CardHeader>
+                    <CardTitle className="text-lg">Rincian Transaksi</CardTitle>
+                    <CardDescription>Detail pengeluaran dan pemasukan bulan ini</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {/* Custom Tabs */}
+                    <div className="flex space-x-1 bg-muted/50 p-1 rounded-lg w-full max-w-md mb-6">
+                        <button
+                            onClick={() => setActiveTab('expense')}
+                            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
+                                activeTab === 'expense' 
+                                ? 'bg-background text-foreground shadow-sm' 
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Pengeluaran
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('income')}
+                            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-all ${
+                                activeTab === 'income' 
+                                ? 'bg-background text-foreground shadow-sm' 
+                                : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Pemasukan
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-muted-foreground uppercase bg-muted/30">
+                                <tr>
+                                    <th className="px-4 py-3 rounded-tl-lg">Tanggal</th>
+                                    <th className="px-4 py-3">Kategori</th>
+                                    <th className="px-4 py-3">Deskripsi</th>
+                                    <th className="px-4 py-3">Dompet</th>
+                                    <th className="px-4 py-3 text-right rounded-tr-lg">Nominal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredTransactions.length > 0 ? (
+                                    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+                                    filteredTransactions.map((tx: any) => (
+                                        <tr key={tx.id} className="border-b last:border-0 hover:bg-muted/10 transition-colors">
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    {new Date(tx.date).toLocaleDateString('id-ID', {
+                                                        day: 'numeric',
+                                                        month: 'short',
+                                                        year: 'numeric'
+                                                    })}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div 
+                                                        className="w-3 h-3 rounded-full" 
+                                                        style={{ backgroundColor: tx.category?.color || '#cbd5e1' }}
+                                                    />
+                                                    <span className="font-medium">{tx.category?.name || 'Tanpa Kategori'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2 max-w-[200px] truncate">
+                                                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                                    <span className="truncate" title={tx.description || '-'}>
+                                                        {tx.description || '-'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                                    {tx.wallet?.name || '-'}
+                                                </div>
+                                            </td>
+                                            <td className={`px-4 py-3 text-right font-semibold ${
+                                                tx.type === 'income' ? 'text-green-600' : 'text-red-600'
+                                            }`}>
+                                                {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                                            Tidak ada data {activeTab === 'expense' ? 'pengeluaran' : 'pemasukan'} untuk bulan ini.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     )
 }
