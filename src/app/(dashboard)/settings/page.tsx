@@ -34,22 +34,22 @@ export default function SettingsPage() {
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
 
-    // Keep state synced if user context updates slowly
-    useEffect(() => {
-        if (user) {
-            setName(user.name || '')
-            setEmail(user.email || '')
-            setMonthlyIncome(user.monthlyIncome?.toString() || '0')
-            setCurrency(user.currency || 'IDR')
-        }
-    }, [user])
+    // Keep state synced when user context updates (e.g. after hydration)
+    const [prevUser, setPrevUser] = useState(user)
+    if (user !== prevUser) {
+        setPrevUser(user)
+        setName(user?.name || '')
+        setEmail(user?.email || '')
+        setMonthlyIncome(user?.monthlyIncome?.toString() || '0')
+        setCurrency(user?.currency || 'IDR')
+    }
 
     const handleSave = async () => {
         if (!user?.id) return
         
         setIsLoading(true)
         try {
-            const payload: any = { id: user.id }
+            const payload: Record<string, string | number> = { id: user.id }
             
             if (activeTab === 'profile') {
                 payload.name = name
@@ -95,10 +95,11 @@ export default function SettingsPage() {
                 setCurrentPassword('')
                 setNewPassword('')
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const err = error as Error
             toast({
                 title: 'Gagal',
-                description: error.message || 'Terjadi kesalahan sistem',
+                description: err.message || 'Terjadi kesalahan sistem',
                 variant: 'destructive',
             })
         } finally {
