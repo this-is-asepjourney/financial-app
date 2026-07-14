@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft, Wallet, Calendar, Tag, FileText } from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft, Wallet, Calendar, Tag, FileText, RefreshCw } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth-store'
 import { formatCurrency } from '@/lib/utils'
 
@@ -32,24 +33,33 @@ export default function ReportsPage() {
     const [data, setData] = useState<any>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense')
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
+    const fetchData = async () => {
+        if (!user) return
+        try {
+            const res = await fetch(`/api/reports/monthly-summary?userId=${user.id}`)
+            if (res.ok) {
+                const json = await res.json()
+                setData(json)
+            }
+        } catch (error) {
+            console.error("Failed to fetch reports:", error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     useEffect(() => {
-        if (!user) return
-        const fetchData = async () => {
-            try {
-                const res = await fetch(`/api/reports/monthly-summary?userId=${user.id}`)
-                if (res.ok) {
-                    const json = await res.json()
-                    setData(json)
-                }
-            } catch (error) {
-                console.error("Failed to fetch reports:", error)
-            } finally {
-                setIsLoading(false)
-            }
-        }
         fetchData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        await fetchData()
+        setIsRefreshing(false)
+    }
 
     if (isLoading) {
         return (
@@ -77,6 +87,16 @@ export default function ReportsPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Laporan Keuangan</h1>
                     <p className="text-muted-foreground mt-1">Analisis komprehensif arus kas dan pengeluaran Anda</p>
                 </div>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="gap-2"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh Laporan
+                </Button>
             </div>
 
             {/* Summary Cards */}

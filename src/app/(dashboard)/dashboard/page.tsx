@@ -14,7 +14,9 @@ import {
     PiggyBank,
     Target,
     AlertCircle,
+    RefreshCw,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface DashboardData {
     summary: {
@@ -53,6 +55,7 @@ export default function DashboardPage() {
     const [data, setData] = useState<DashboardData | null>(null)
     const [totalWalletBalance, setTotalWalletBalance] = useState(0)
     const [loading, setLoading] = useState(true)
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
     const fetchDashboardData = useCallback(async () => {
         if (!user?.id) {
@@ -119,6 +122,12 @@ export default function DashboardPage() {
         return () => clearTimeout(timer)
     }, [fetchDashboardData])
 
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        await fetchDashboardData()
+        setIsRefreshing(false)
+    }
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -129,7 +138,19 @@ export default function DashboardPage() {
 
     return (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-            <h1 className="text-3xl font-bold">Dashboard</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="gap-2"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Refresh Data
+                </Button>
+            </div>
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
