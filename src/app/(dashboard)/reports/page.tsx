@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft, Wallet, Calendar, Tag, FileText, RefreshCw } from 'lucide-react'
+import { BarChart3, TrendingUp, TrendingDown, PieChart as PieChartIcon, ArrowRightLeft, Wallet, Calendar, FileText, RefreshCw } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth-store'
@@ -51,7 +51,12 @@ export default function ReportsPage() {
     }
 
     useEffect(() => {
-        fetchData()
+        if (user?.id) {
+            const timer = setTimeout(() => {
+                fetchData()
+            }, 0)
+            return () => clearTimeout(timer)
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user])
 

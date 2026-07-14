@@ -11,21 +11,44 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'User ID diperlukan' }, { status: 400 })
         }
 
-        const where: any = { userId }
+        const where: { userId: string; type?: string } = { userId }
         if (type) where.type = type
 
-        const categories = await prisma.category.findMany({
+        const now = new Date()
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        
+        const categoriesData = await prisma.category.findMany({
             where,
             include: {
                 _count: {
                     select: { transactions: true },
                 },
+                transactions: {
+                    where: {
+                        date: {
+                            gte: firstDayOfMonth
+                        }
+                    },
+                    select: {
+                        amount: true
+                    }
+                }
             },
             orderBy: { name: 'asc' },
         })
 
+        const categories = categoriesData.map(cat => {
+            const currentMonthTotal = cat.transactions.reduce((sum: number, tx: { amount: number }) => sum + tx.amount, 0)
+            const { transactions: _unused, ...rest } = cat
+            return {
+                ...rest,
+                currentMonthTotal
+            }
+        })
+
         return NextResponse.json({ categories })
     } catch (error) {
+        console.error(error)
         return NextResponse.json(
             { error: 'Gagal mengambil kategori' },
             { status: 500 }
@@ -58,6 +81,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ category }, { status: 201 })
     } catch (error) {
+        console.error(error)
         return NextResponse.json(
             { error: 'Gagal membuat kategori' },
             { status: 500 }
