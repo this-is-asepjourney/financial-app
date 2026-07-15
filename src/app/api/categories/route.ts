@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: Request) {
-        try {
+    try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         const userId = session.user.id
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
         const now = new Date()
         const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        
+
         const categoriesData = await prisma.category.findMany({
             where,
             include: {
@@ -39,7 +39,8 @@ export async function GET(request: Request) {
 
         const categories = categoriesData.map(cat => {
             const currentMonthTotal = cat.transactions.reduce((sum: number, tx: { amount: number }) => sum + tx.amount, 0)
-            const { transactions: _unused, ...rest } = cat
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { transactions, ...rest } = cat
             return {
                 ...rest,
                 currentMonthTotal
@@ -57,13 +58,13 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-        try {
+    try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         const userId = session.user.id
 
         const body = await request.json()
-        const { name, type, icon, color, budget } = body
+        const { name, type, icon, color, budget, isDebtPayment } = body
 
         if (!name || !type) {
             return NextResponse.json(
@@ -80,6 +81,7 @@ export async function POST(request: Request) {
                 icon: icon || 'folder',
                 color: color || '#6366F1',
                 budget: budget || null,
+                isDebtPayment: isDebtPayment === true,
             },
         })
 

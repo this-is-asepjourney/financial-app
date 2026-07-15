@@ -14,6 +14,7 @@ export interface FinancialData {
     totalSavings: number
     emergencyFund: number
     monthlySavings: number
+    avgMonthlyExpenses?: number // For 3-month average emergency fund calculation
 
     // Debt
     totalDebt: number
@@ -118,7 +119,8 @@ const WEIGHTS = {
 
 export function calculateFinHealthScore(data: FinancialData): FinancialHealthResult {
     const savingsRateVal = data.monthlyIncome > 0 ? (data.monthlyIncome - data.monthlyExpenses) / data.monthlyIncome : 0;
-    const emergencyFundMonthsVal = data.monthlyExpenses > 0 ? data.emergencyFund / data.monthlyExpenses : 0;
+    const effectiveExpenses = data.avgMonthlyExpenses && data.avgMonthlyExpenses > 0 ? data.avgMonthlyExpenses : data.monthlyExpenses;
+    const emergencyFundMonthsVal = effectiveExpenses > 0 ? data.emergencyFund / effectiveExpenses : 0;
     const dtiVal = data.monthlyIncome > 0 ? data.monthlyDebtPayments / data.monthlyIncome : 0;
     const budgetsVal = data.budgets || [];
     

@@ -7,7 +7,8 @@ import {
     LayoutDashboard,
     ArrowLeftRight,
     Wallet,
-    BarChart3,
+    CreditCard,
+    Heart,
 } from 'lucide-react'
 
 const bottomNavItems = [
@@ -30,10 +31,16 @@ const bottomNavItems = [
         color: 'text-amber-600',
     },
     {
-        title: 'Laporan',
-        icon: BarChart3,
-        href: '/reports',
-        color: 'text-indigo-600',
+        title: 'Utang',
+        icon: CreditCard,
+        href: '/debts',
+        color: 'text-rose-600',
+    },
+    {
+        title: 'Kesehatan',
+        icon: Heart,
+        href: '/financial-health',
+        color: 'text-pink-600',
     },
 ]
 

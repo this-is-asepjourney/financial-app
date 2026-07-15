@@ -19,8 +19,7 @@ export async function GET(request: Request) {
         const { start, end } = getMonthRange(now)
 
         // 1. Fetch Wallets for Assets & Emergency Fund
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const wallets = await (prisma as any).wallet.findMany({
+        const wallets = await prisma.wallet.findMany({
             where: { userId },
             include: {
                 transactionsFrom: {
@@ -38,16 +37,13 @@ export async function GET(request: Request) {
         let totalCashAndBank = 0
         let totalAssets = 0
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        wallets.forEach((wallet: any) => {
+        wallets.forEach(wallet => {
             let futureNet = 0
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            wallet.transactionsFrom.forEach((t: any) => {
+            wallet.transactionsFrom.forEach(t => {
                 if (t.type === 'income') futureNet += t.amount
                 if (t.type === 'expense' || t.type === 'transfer') futureNet -= t.amount
             })
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            wallet.transactionsTo.forEach((t: any) => {
+            wallet.transactionsTo.forEach(t => {
                 if (t.type === 'transfer') futureNet += t.amount
             })
             const currentBalance = wallet.balance - futureNet
@@ -58,10 +54,14 @@ export async function GET(request: Request) {
             }
         })
 
+        const threeMonthsAgo = new Date(start)
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 2) // Past 3 months including current month
+
         // 2. Fetch Transactions & Investments
         const [
             monthlyIncome,
             monthlyExpenses,
+            past3MonthsExpenses,
             expensesByCategory,
             debts,
             investments,
@@ -75,6 +75,11 @@ export async function GET(request: Request) {
             // Monthly expenses
             prisma.transaction.aggregate({
                 where: { userId, type: 'expense', date: { gte: start, lte: end } },
+                _sum: { amount: true },
+            }),
+            // Past 3 months expenses (for Emergency Fund)
+            prisma.transaction.aggregate({
+                where: { userId, type: 'expense', date: { gte: threeMonthsAgo, lte: end } },
                 _sum: { amount: true },
             }),
             // Expenses by Category (for Needs vs Wants)
@@ -96,6 +101,8 @@ export async function GET(request: Request) {
 
         const monthlyIncomeAmount = monthlyIncome._sum.amount || 0
         const monthlyExpenseAmount = monthlyExpenses._sum.amount || 0
+        const past3MonthsExpenseAmount = past3MonthsExpenses._sum.amount || 0
+        const avgMonthlyExpenses = past3MonthsExpenseAmount / 3
         const investmentTotal = investments._sum.currentValue || investments._sum.amount || 0
         totalAssets += investmentTotal
 
@@ -173,6 +180,7 @@ export async function GET(request: Request) {
             hasRetirementPlan: retirementPayments > 0,
             hasWill: false,
             budgets: budgets,
+            avgMonthlyExpenses,
         }
 
         // 5. Calculate Score

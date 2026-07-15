@@ -10,11 +10,10 @@ export async function PUT(
         try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        const userId = session.user.id
 
         const { id } = await params
         const body = await request.json()
-        const { name, type, icon, color, budget } = body
+        const { name, type, icon, color, budget, isDebtPayment } = body
 
         const category = await prisma.category.update({
             where: { id },
@@ -24,11 +23,12 @@ export async function PUT(
                 icon,
                 color,
                 budget,
+                isDebtPayment: isDebtPayment === true,
             },
         })
 
         return NextResponse.json({ category })
-    } catch (error) {
+    } catch (_error) {
         return NextResponse.json(
             { error: 'Gagal mengupdate kategori' },
             { status: 500 }
@@ -43,7 +43,6 @@ export async function DELETE(
         try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        const userId = session.user.id
 
         const { id } = await params
         // Check if category has transactions
@@ -63,7 +62,7 @@ export async function DELETE(
         })
 
         return NextResponse.json({ success: true })
-    } catch (error) {
+    } catch (_error) {
         return NextResponse.json(
             { error: 'Gagal menghapus kategori' },
             { status: 500 }

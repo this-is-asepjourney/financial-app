@@ -51,6 +51,7 @@ interface Category {
     type: 'income' | 'expense'
     color: string
     icon: string | null
+    isDebtPayment: boolean
     currentMonthTotal?: number
     _count?: {
         transactions: number
@@ -100,6 +101,7 @@ export default function CategoriesPage() {
     const [formType, setFormType] = useState<'income' | 'expense'>('expense')
     const [formColor, setFormColor] = useState('#6366F1')
     const [formIcon, setFormIcon] = useState('folder')
+    const [formIsDebtPayment, setFormIsDebtPayment] = useState(false)
 
     const fetchCategories = useCallback(async () => {
         try {
@@ -163,7 +165,8 @@ export default function CategoriesPage() {
                     name: formName,
                     type: formType,
                     color: formColor,
-                    icon: formIcon
+                    icon: formIcon,
+                    isDebtPayment: formType === 'expense' ? formIsDebtPayment : false,
                 }),
             })
 
@@ -195,6 +198,7 @@ export default function CategoriesPage() {
         setFormType(category.type)
         setFormColor(category.color)
         setFormIcon(category.icon || 'folder')
+        setFormIsDebtPayment(category.isDebtPayment || false)
         setShowForm(true)
     }
 
@@ -239,6 +243,7 @@ export default function CategoriesPage() {
         setFormType('expense')
         setFormColor('#6366F1')
         setFormIcon('folder')
+        setFormIsDebtPayment(false)
         setEditingCategory(null)
         setShowForm(false)
     }
@@ -352,6 +357,27 @@ export default function CategoriesPage() {
                                     </div>
                                 </div>
 
+                                {/* isDebtPayment toggle – only for expense */}
+                                {formType === 'expense' && (
+                                    <div className="flex items-center justify-between p-3 rounded-lg bg-rose-50 border border-rose-200">
+                                        <div>
+                                            <p className="text-sm font-medium text-rose-800">Pembayaran Cicilan / Utang</p>
+                                            <p className="text-xs text-rose-600 mt-0.5">Tandai jika kategori ini untuk membayar cicilan/utang</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormIsDebtPayment(!formIsDebtPayment)}
+                                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                formIsDebtPayment ? 'bg-rose-600' : 'bg-gray-200'
+                                            }`}
+                                        >
+                                            <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                formIsDebtPayment ? 'translate-x-5' : 'translate-x-0'
+                                            }`} />
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="flex space-x-2 pt-4">
                                     <Button type="submit" className="flex-1">
                                         {editingCategory ? 'Update Kategori' : 'Simpan Kategori'}
@@ -462,7 +488,14 @@ export default function CategoriesPage() {
                                                 <IconComponent className="h-6 w-6" style={{ color: category.color }} />
                                             </div>
                                             <div className="overflow-hidden flex-1">
-                                                <h3 className="font-semibold text-lg truncate" title={category.name}>{category.name}</h3>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="font-semibold text-lg truncate" title={category.name}>{category.name}</h3>
+                                                    {category.isDebtPayment && (
+                                                        <span className="text-[10px] font-semibold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full border border-rose-200 flex-shrink-0">
+                                                            Cicilan
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <p className="text-xs text-muted-foreground capitalize flex items-center gap-1.5 mt-1">
                                                     <span className={`w-2 h-2 rounded-full ${category.type === 'income' ? 'bg-green-500' : 'bg-red-500'}`} />
                                                     {category.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}

@@ -23,6 +23,7 @@ import {
     Bell,
     Sun,
     Moon,
+    CreditCard,
 } from 'lucide-react'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
@@ -78,6 +79,13 @@ const menuItems = [
         href: '/goals',
         color: 'text-red-600',
         bgColor: 'bg-red-50',
+    },
+    {
+        title: 'Utang & Cicilan',
+        icon: CreditCard,
+        href: '/debts',
+        color: 'text-rose-600',
+        bgColor: 'bg-rose-50',
     },
     {
         title: 'Investasi',
@@ -145,7 +153,7 @@ export default function DashboardLayout({
             {/* Sidebar */}
             <aside
                 className={cn(
-                    'fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0',
+                    'fixed top-0 left-0 z-50 h-full w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 flex flex-col',
                     mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
                 )}
             >
@@ -187,7 +195,7 @@ export default function DashboardLayout({
                 </div>
 
                 {/* Navigation Menu */}
-                <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+                <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto min-h-0">
                     {menuItems.map((item) => {
                         const Icon = item.icon
                         const active = isActive(item.href)
