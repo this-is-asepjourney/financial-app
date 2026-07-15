@@ -38,6 +38,8 @@ export async function GET(request: Request) {
             ]
         }
 
+        const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'
+
         const queryOptions: any = {
             where,
             include: {
@@ -65,8 +67,8 @@ export async function GET(request: Request) {
                 }
             },
             orderBy: [
-                { date: 'desc' },
-                { createdAt: 'desc' }
+                { date: sortOrder },
+                { createdAt: sortOrder }
             ]
         }
 

@@ -125,6 +125,14 @@ export function TransactionForm({
         }
     }
 
+    const formatForDatetimeLocal = (date: Date | string | number | undefined | null) => {
+        if (!date) return '';
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return '';
+        const pad = (n: number) => n.toString().padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Type Selector */}
@@ -240,10 +248,11 @@ export function TransactionForm({
 
             {/* Date */}
             <div>
-                <label className="text-sm font-medium mb-1 block">Tanggal</label>
+                <label className="text-sm font-medium mb-1 block">Tanggal & Waktu</label>
                 <Input
-                    {...register('date', { valueAsDate: true })}
-                    type="date"
+                    type="datetime-local"
+                    value={formatForDatetimeLocal(watch('date'))}
+                    onChange={(e) => setValue('date', new Date(e.target.value), { shouldValidate: true })}
                 />
                 {errors.date && (
                     <p className="text-red-500 text-xs mt-1">{errors.date.message}</p>

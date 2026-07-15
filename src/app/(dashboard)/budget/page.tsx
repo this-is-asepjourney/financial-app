@@ -569,6 +569,26 @@ function BudgetCard({ budget, onEdit, onDelete, onPay, isPaid }: { budget: Budge
     const percentage = calculatePercentage(budget.spent, budget.amount)
     const isOverBudget = budget.spent > budget.amount
 
+    const getDaysLeftText = (dueDateString: string | null, isRecurring: boolean) => {
+        if (!dueDateString) return null
+        let dueDate = new Date(dueDateString)
+        const today = new Date()
+        dueDate.setHours(0, 0, 0, 0)
+        today.setHours(0, 0, 0, 0)
+        
+        // Jika rutin dan sudah lewat, hitung untuk jadwal bulan berikutnya
+        if (isRecurring && dueDate.getTime() < today.getTime()) {
+            dueDate.setMonth(dueDate.getMonth() + 1)
+        }
+
+        const diffTime = dueDate.getTime() - today.getTime()
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+        
+        if (diffDays > 0) return `${diffDays} hari lagi`
+        if (diffDays === 0) return 'Hari ini'
+        return `Terlewat ${Math.abs(diffDays)} hari`
+    }
+
     return (
         <Card className={`overflow-hidden transition-all hover:shadow-md ${isPaid ? 'border-green-200 bg-green-50/30' : 'border-slate-200'}`}>
             {isPaid && (
@@ -596,6 +616,7 @@ function BudgetCard({ budget, onEdit, onDelete, onPay, isPaid }: { budget: Budge
                                 {budget.dueDate && (
                                     <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${isPaid ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                         Jatuh Tempo: {new Date(budget.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                        {!isPaid && ` (${getDaysLeftText(budget.dueDate, budget.isRecurring)})`}
                                     </span>
                                 )}
                                 {budget.isRecurring && (

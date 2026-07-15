@@ -22,6 +22,16 @@ export function formatDate(date: Date | string): string {
     }).format(new Date(date))
 }
 
+export function formatDateTime(date: Date | string): string {
+    return new Intl.DateTimeFormat('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(date))
+}
+
 export function calculatePercentage(value: number, total: number): number {
     if (total === 0) return 0
     return Math.round((value / total) * 100)

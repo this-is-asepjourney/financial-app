@@ -19,7 +19,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils'
 import {
     Plus,
     Search,
@@ -35,6 +35,8 @@ import {
     ArrowRightLeft,
     Wallet,
     Calendar,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react'
 import { TransactionForm } from '@/components/forms/TransactionForm'
 import { useToast } from '@/components/ui/use-toast'
@@ -92,6 +94,7 @@ export default function TransactionsPage() {
     const [filterType, setFilterType] = useState<string>('all')
     const [filterCategory, setFilterCategory] = useState<string>('all')
     const [filterMonth, setFilterMonth] = useState<string>(new Date().toISOString().slice(0, 7))
+    const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
 
     // Pagination
     const [page, setPage] = useState(1)
@@ -111,6 +114,7 @@ export default function TransactionsPage() {
             if (filterType !== 'all') params.append('type', filterType)
             if (filterCategory !== 'all') params.append('categoryId', filterCategory)
             if (filterMonth) params.append('month', filterMonth)
+            params.append('sortOrder', sortOrder)
 
             const response = await fetch(`/api/transactions?${params}`)
             const data = await response.json()
@@ -127,7 +131,7 @@ export default function TransactionsPage() {
         } finally {
             setLoading(false)
         }
-    }, [user, page, searchTerm, filterType, filterCategory, filterMonth, toast])
+    }, [user, page, searchTerm, filterType, filterCategory, filterMonth, sortOrder, toast])
 
     const fetchCategories = useCallback(async () => {
         try {
@@ -211,6 +215,7 @@ export default function TransactionsPage() {
             if (filterType !== 'all') params.append('type', filterType)
             if (filterCategory !== 'all') params.append('categoryId', filterCategory)
             if (filterMonth) params.append('month', filterMonth)
+            params.append('sortOrder', sortOrder)
 
             const response = await fetch(`/api/transactions?${params}`)
             if (!response.ok) throw new Error('Gagal mengekspor data')
@@ -226,7 +231,7 @@ export default function TransactionsPage() {
             const csvRows = [headers.join(',')]
 
             for (const t of exportData) {
-                const date = formatDate(t.date)
+                const date = formatDateTime(t.date)
                 const type = t.type === 'income' ? 'Pemasukan' : t.type === 'expense' ? 'Pengeluaran' : 'Transfer'
                 const category = t.category?.name || '-'
                 // Escape commas and quotes inside description
@@ -393,10 +398,20 @@ export default function TransactionsPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle>Daftar Transaksi</CardTitle>
-                        <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting || loading || transactions.length === 0}>
-                            <Download className="h-4 w-4 mr-2" />
-                            {isExporting ? 'Mengekspor...' : 'Export CSV'}
-                        </Button>
+                        <div className="flex space-x-2">
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setSortOrder(order => order === 'desc' ? 'asc' : 'desc')}
+                            >
+                                {sortOrder === 'desc' ? <ArrowDown className="h-4 w-4 mr-2" /> : <ArrowUp className="h-4 w-4 mr-2" />}
+                                {sortOrder === 'desc' ? 'Terbaru' : 'Terlama'}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting || loading || transactions.length === 0}>
+                                <Download className="h-4 w-4 mr-2" />
+                                {isExporting ? 'Mengekspor...' : 'Export CSV'}
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -435,7 +450,7 @@ export default function TransactionsPage() {
                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1">
                                                 <span className="flex items-center gap-1.5">
                                                     <Calendar className="h-3.5 w-3.5" />
-                                                    {formatDate(transaction.date)}
+                                                    {formatDateTime(transaction.date)}
                                                 </span>
                                                 <span className="flex items-center gap-1.5">
                                                     {transaction.type === 'transfer' ? (
