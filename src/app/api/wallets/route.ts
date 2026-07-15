@@ -70,15 +70,29 @@ export async function POST(request: Request) {
         }
 
         const { name, type, balance, purpose } = validation.data as { name: string; type: string; balance?: number; purpose?: string }
+        const initialBalance = balance || 0
         const wallet = await prisma.wallet.create({
             data: {
                 userId,
                 name,
                 type,
-                balance: balance || 0,
+                balance: initialBalance,
                 purpose: purpose || 'operasional',
             },
         })
+
+        if (initialBalance > 0) {
+            await prisma.transaction.create({
+                data: {
+                    userId,
+                    amount: initialBalance,
+                    type: 'income',
+                    description: 'Saldo Awal',
+                    date: new Date(),
+                    walletId: wallet.id,
+                }
+            })
+        }
 
         return NextResponse.json({ wallet }, { status: 201 })
     } catch (error) {

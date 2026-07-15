@@ -16,6 +16,7 @@ export async function GET(request: Request) {
         const type = searchParams.get('type')
         const categoryId = searchParams.get('categoryId')
         const search = searchParams.get('search')
+        const isExport = searchParams.get('export') === 'true'
         const page = parseInt(searchParams.get('page') || '1')
         const limit = parseInt(searchParams.get('limit') || '20')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,40 +38,45 @@ export async function GET(request: Request) {
             ]
         }
 
-        const [transactions, total] = await Promise.all([
-            prisma.transaction.findMany({
-                where,
-                include: {
-                    category: {
-                        select: {
-                            id: true,
-                            name: true,
-                            icon: true,
-                            color: true,
-                        },
+        const queryOptions: any = {
+            where,
+            include: {
+                category: {
+                    select: {
+                        id: true,
+                        name: true,
+                        icon: true,
+                        color: true,
                     },
-                    wallet: {
-                        select: {
-                            id: true,
-                            name: true,
-                            type: true,
-                        }
-                    },
-                    toWallet: {
-                        select: {
-                            id: true,
-                            name: true,
-                            type: true,
-                        }
+                },
+                wallet: {
+                    select: {
+                        id: true,
+                        name: true,
+                        type: true,
                     }
                 },
-                orderBy: [
-                    { date: 'desc' },
-                    { createdAt: 'desc' }
-                ],
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
+                toWallet: {
+                    select: {
+                        id: true,
+                        name: true,
+                        type: true,
+                    }
+                }
+            },
+            orderBy: [
+                { date: 'desc' },
+                { createdAt: 'desc' }
+            ]
+        }
+
+        if (!isExport) {
+            queryOptions.skip = (page - 1) * limit
+            queryOptions.take = limit
+        }
+
+        const [transactions, total] = await Promise.all([
+            prisma.transaction.findMany(queryOptions),
             prisma.transaction.count({ where }),
         ])
 

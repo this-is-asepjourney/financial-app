@@ -8,7 +8,7 @@ import { getMonthRange } from '@/lib/utils'
 // Heuristic keywords to classify Needs vs Wants
 const needsKeywords = ['makanan', 'listrik', 'air', 'transportasi', 'kesehatan', 'tempat tinggal', 'asuransi', 'pendidikan', 'tagihan', 'kebutuhan', 'pulsa', 'kuota', 'bensin', 'kost', 'sewa']
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
         try {
         const session = await getServerSession(authOptions)
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

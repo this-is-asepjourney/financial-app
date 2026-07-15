@@ -151,7 +151,7 @@ export default function WalletsPage() {
 
     const openEditDialog = (wallet: Wallet) => {
         setEditingWallet(wallet)
-        setFormData({ name: wallet.name, type: wallet.type, purpose: wallet.purpose, balance: 0 })
+        setFormData({ name: wallet.name, type: wallet.type, purpose: wallet.purpose, balance: wallet.balance })
         setIsDialogOpen(true)
     }
 
@@ -536,24 +536,24 @@ export default function WalletsPage() {
                             </div>
                         )}
 
-                        {!editingWallet && (
-                            <div className="space-y-1.5">
-                                <Label>Saldo Awal (Rp)</Label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
-                                    <Input
-                                        className="pl-9"
-                                        value={formData.balance ? formatAmount(formData.balance) : ''}
-                                        onChange={e => setFormData({ ...formData, balance: parseAmount(e.target.value) })}
-                                        placeholder="0"
-                                        required
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    Saldo akan otomatis berubah sesuai transaksi yang dicatat.
-                                </p>
+                        <div className="space-y-1.5">
+                            <Label>Saldo (Rp)</Label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
+                                <Input
+                                    className="pl-9"
+                                    value={formData.balance !== undefined ? formatAmount(formData.balance) : ''}
+                                    onChange={e => setFormData({ ...formData, balance: parseAmount(e.target.value) })}
+                                    placeholder="0"
+                                    required
+                                />
                             </div>
-                        )}
+                            <p className="text-xs text-muted-foreground">
+                                {editingWallet 
+                                    ? "Edit saldo saat ini secara manual." 
+                                    : "Saldo awal (akan otomatis berubah sesuai transaksi)."}
+                            </p>
+                        </div>
                         <div className="flex gap-2 pt-1">
                             <Button type="button" variant="ghost" className="flex-1" onClick={() => setIsDialogOpen(false)}>Batal</Button>
                             <Button type="submit" className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700">

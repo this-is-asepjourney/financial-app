@@ -85,6 +85,7 @@ export default function TransactionsPage() {
     const [loading, setLoading] = useState(true)
     const [showForm, setShowForm] = useState(false)
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
+    const [isExporting, setIsExporting] = useState(false)
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('')
@@ -196,6 +197,66 @@ export default function TransactionsPage() {
         setShowForm(false)
         setEditingTransaction(null)
         fetchTransactions()
+    }
+
+    const handleExport = async () => {
+        try {
+            setIsExporting(true)
+            const params = new URLSearchParams({
+                userId: user?.id || '',
+                export: 'true'
+            })
+
+            if (searchTerm) params.append('search', searchTerm)
+            if (filterType !== 'all') params.append('type', filterType)
+            if (filterCategory !== 'all') params.append('categoryId', filterCategory)
+            if (filterMonth) params.append('month', filterMonth)
+
+            const response = await fetch(`/api/transactions?${params}`)
+            if (!response.ok) throw new Error('Gagal mengekspor data')
+            const data = await response.json()
+            const exportData = data.transactions
+
+            if (!exportData || exportData.length === 0) {
+                toast({ title: 'Info', description: 'Tidak ada transaksi untuk diekspor.' })
+                return
+            }
+
+            const headers = ['Tanggal', 'Tipe', 'Kategori', 'Deskripsi', 'Jumlah (Rp)', 'Dari Dompet', 'Ke Dompet', 'Status']
+            const csvRows = [headers.join(',')]
+
+            for (const t of exportData) {
+                const date = formatDate(t.date)
+                const type = t.type === 'income' ? 'Pemasukan' : t.type === 'expense' ? 'Pengeluaran' : 'Transfer'
+                const category = t.category?.name || '-'
+                // Escape commas and quotes inside description
+                const desc = `"${(t.description || '').replace(/"/g, '""')}"`
+                const amount = t.amount
+                const wallet = t.wallet?.name || '-'
+                const toWallet = t.toWallet?.name || '-'
+                const recurring = t.isRecurring ? 'Recurring' : '-'
+                
+                csvRows.push([date, type, category, desc, amount, wallet, toWallet, recurring].join(','))
+            }
+
+            const csvContent = csvRows.join('\n')
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            
+            const link = document.createElement('a')
+            link.href = url
+            link.setAttribute('download', `transaksi_${filterMonth || 'all'}.csv`)
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            
+            toast({ title: 'Sukses', description: 'Data berhasil diekspor' })
+        } catch (error) {
+            console.error('Export failed:', error)
+            toast({ title: 'Error', description: 'Gagal mengekspor data', variant: 'destructive' })
+        } finally {
+            setIsExporting(false)
+        }
     }
 
     const totalIncome = transactions
@@ -332,9 +393,9 @@ export default function TransactionsPage() {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle>Daftar Transaksi</CardTitle>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={handleExport} disabled={isExporting || loading || transactions.length === 0}>
                             <Download className="h-4 w-4 mr-2" />
-                            Export
+                            {isExporting ? 'Mengekspor...' : 'Export CSV'}
                         </Button>
                     </div>
                 </CardHeader>

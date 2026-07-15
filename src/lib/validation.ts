@@ -57,6 +57,7 @@ export const walletSchema = z.object({
     name: z.string().min(1, 'Nama dompet harus diisi'),
     type: z.enum(['bank', 'ewallet', 'cash']),
     balance: z.number().default(0),
+    purpose: z.string().optional().default('operasional'),
 })
 
 export type LoginInput = z.infer<typeof loginSchema>
