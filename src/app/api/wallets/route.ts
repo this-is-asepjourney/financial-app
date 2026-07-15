@@ -10,7 +10,7 @@ export async function GET(request: Request) {
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         const userId = session.user.id
 
-        const { searchParams } = new URL(request.url)
+        const { searchParams: _sp } = new URL(request.url)
         const wallets = await prisma.wallet.findMany({
             where: { userId },
             orderBy: { createdAt: 'asc' },
@@ -69,13 +69,14 @@ export async function POST(request: Request) {
             )
         }
 
-        const { name, type, balance } = validation.data
+        const { name, type, balance, purpose } = validation.data as { name: string; type: string; balance?: number; purpose?: string }
         const wallet = await prisma.wallet.create({
             data: {
                 userId,
                 name,
                 type,
                 balance: balance || 0,
+                purpose: purpose || 'operasional',
             },
         })
 

@@ -33,6 +33,7 @@ model Wallet {
   userId    String
   name      String
   type      String   // bank, ewallet, cash
+  purpose   String   @default("operasional") // darurat | tabungan | operasional | investasi | bisnis
   balance   Float    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

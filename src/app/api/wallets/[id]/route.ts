@@ -34,10 +34,10 @@ export async function PUT(
             )
         }
 
-        const { name, type, balance } = validation.data
+        const { name, type, balance, purpose } = validation.data as { name: string; type: string; balance?: number; purpose?: string }
         const wallet = await prisma.wallet.update({
             where: { id },
-            data: { name, type, balance },
+            data: { name, type, balance, purpose: purpose || 'operasional' },
         })
 
         return NextResponse.json({ wallet })

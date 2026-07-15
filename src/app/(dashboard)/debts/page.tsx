@@ -228,7 +228,11 @@ export default function DebtsPage() {
     }
 
     const totalPaidOff = summary ? summary.totalOriginalAmount - summary.totalRemainingAmount : 0
-    const thirtyDaysFromNow = useMemo(() => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), [])
+    const [thirtyDaysFromNow, setThirtyDaysFromNow] = useState<Date | null>(null)
+
+    useEffect(() => {
+        setThirtyDaysFromNow(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+    }, [])
 
     return (
         <div className="p-4 sm:p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -339,7 +343,7 @@ export default function DebtsPage() {
                         const TypeIcon = typeInfo.icon
                         const paidPct = paidOffPercent(debt)
                         const months = monthsToPayOff(debt)
-                        const isAlmostDue = debt.dueDate &&
+                        const isAlmostDue = debt.dueDate && thirtyDaysFromNow &&
                             new Date(debt.dueDate) < thirtyDaysFromNow
 
                         return (

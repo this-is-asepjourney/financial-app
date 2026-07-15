@@ -14,7 +14,6 @@ export async function GET(request: Request) {
         if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         const userId = session.user.id
 
-        const { searchParams } = new URL(request.url)
         const now = new Date()
         const { start, end } = getMonthRange(now)
 
@@ -33,9 +32,11 @@ export async function GET(request: Request) {
             }
         })
 
-        // Calculate actual current wallet balances (excluding future transactions)
-        let totalCashAndBank = 0
+        // Calculate actual current wallet balances (excluding future transactions), split by purpose
         let totalAssets = 0
+        let emergencyFundBalance = 0   // dompet purpose === 'darurat'
+        let tabunganBalance = 0        // dompet purpose === 'tabungan'
+        let investasiLiquid = 0        // dompet purpose === 'investasi'
 
         wallets.forEach(wallet => {
             let futureNet = 0
@@ -47,11 +48,11 @@ export async function GET(request: Request) {
                 if (t.type === 'transfer') futureNet += t.amount
             })
             const currentBalance = wallet.balance - futureNet
-            
+
             totalAssets += currentBalance
-            if (wallet.type === 'cash' || wallet.type === 'bank') {
-                totalCashAndBank += currentBalance
-            }
+            if (wallet.purpose === 'darurat') emergencyFundBalance += currentBalance
+            if (wallet.purpose === 'tabungan') tabunganBalance += currentBalance
+            if (wallet.purpose === 'investasi') investasiLiquid += currentBalance
         })
 
         const threeMonthsAgo = new Date(start)
@@ -163,19 +164,19 @@ export async function GET(request: Request) {
             monthlyExpenses: monthlyExpenseAmount,
             needsExpenses,
             wantsExpenses,
-            totalSavings: totalAssets, // Liquid Assets + Investments
-            emergencyFund: totalCashAndBank, // Only highly liquid cash/bank
+            totalSavings: tabunganBalance + investmentTotal, // Tabungan + Investasi
+            emergencyFund: emergencyFundBalance,             // HANYA dompet 'darurat'
             monthlySavings: monthlyIncomeAmount - monthlyExpenseAmount,
-            totalDebt: totalDebtAmount > 0 ? totalDebtAmount : monthlyDebtPayments * 12, // Use explicit debt or estimate
-            monthlyDebtPayments: monthlyDebtPayments, 
+            totalDebt: totalDebtAmount > 0 ? totalDebtAmount : monthlyDebtPayments * 12,
+            monthlyDebtPayments,
             creditCardDebt: 0,
-            totalAssets: totalAssets,
-            investments: investmentTotal,
+            totalAssets: totalAssets + investmentTotal,
+            investments: investmentTotal + investasiLiquid,  // Investment model + dompet 'investasi'
             retirementSavings: retirementPayments,
             hasHealthInsurance: insurancePayments > 0,
             hasLifeInsurance: false,
             hasDisabilityInsurance: false,
-            hasBudget: true, 
+            hasBudget: true,
             hasFinancialPlan: true,
             hasRetirementPlan: retirementPayments > 0,
             hasWill: false,
