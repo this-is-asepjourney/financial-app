@@ -102,10 +102,11 @@ export default function DashboardPage() {
                     score: health.health?.overallScore || 0,
                     status: health.health?.status || 'fair',
                     breakdown: {
-                        spend: health.health?.spend?.score || 0,
-                        save: health.health?.save?.score || 0,
-                        borrow: health.health?.borrow?.score || 0,
-                        plan: health.health?.plan?.score || 0,
+                        savingsRate: health.health?.savingsRate?.score || 0,
+                        emergencyFund: health.health?.emergencyFund?.score || 0,
+                        dti: health.health?.dti?.score || 0,
+                        budgetAdherence: health.health?.budgetAdherence?.score || 0,
+                        investmentRatio: health.health?.investmentRatio?.score || 0,
                     },
                 },
             })

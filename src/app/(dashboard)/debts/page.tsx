@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -231,7 +231,10 @@ export default function DebtsPage() {
     const [thirtyDaysFromNow, setThirtyDaysFromNow] = useState<Date | null>(null)
 
     useEffect(() => {
-        setThirtyDaysFromNow(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+        const timer = setTimeout(() => {
+            setThirtyDaysFromNow(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+        }, 0)
+        return () => clearTimeout(timer)
     }, [])
 
     return (

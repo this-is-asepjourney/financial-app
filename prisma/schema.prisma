@@ -26,6 +26,7 @@ model User {
   financialHealth   FinancialHealth[]
   wallets           Wallet[]
   debts             Debt[]
+  notifications     Notification[]
 }
 
 model Wallet {
@@ -168,6 +169,19 @@ model Debt {
   interestRate  Float?
   dueDate       DateTime?
   createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info") // info, warning, success, alert
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])

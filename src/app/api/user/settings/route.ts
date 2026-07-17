@@ -11,15 +11,11 @@ export async function PUT(request: Request) {
         const userId = session.user.id
 
         const body = await request.json()
-        const { id, name, email, monthlyIncome, currency, currentPassword, newPassword } = body
-
-        if (!id) {
-            return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-        }
+        const { name, email, monthlyIncome, currency, currentPassword, newPassword } = body
 
         // Fetch existing user to verify password if trying to change it
         const existingUser = await prisma.user.findUnique({
-            where: { id }
+            where: { id: userId }
         })
 
         if (!existingUser) {
@@ -44,7 +40,7 @@ export async function PUT(request: Request) {
         }
 
         const updatedUser = await prisma.user.update({
-            where: { id },
+            where: { id: userId },
             data: updateData,
             select: {
                 id: true,

@@ -20,7 +20,6 @@ import {
     X,
     ChevronDown,
     User,
-    Bell,
     Sun,
     Moon,
     CreditCard,
@@ -36,6 +35,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { NotificationMenu } from '@/components/layout/NotificationMenu'
 
 const menuItems = [
     {
@@ -280,10 +280,7 @@ export default function DashboardLayout({
                         {/* Right side */}
                         <div className="flex items-center space-x-2">
                             {/* Notifications */}
-                            <Button variant="ghost" size="icon" className="relative">
-                                <Bell className="h-5 w-5" />
-                                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-                            </Button>
+                            <NotificationMenu />
 
                             {/* Theme Toggle */}
                             <Button
