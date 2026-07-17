@@ -338,7 +338,8 @@ export default function DebtsPage() {
         return Math.ceil(debt.remainingAmount / debt.monthlyPayment)
     }
 
-    const totalPaidOff = summary ? summary.totalOriginalAmount - summary.totalRemainingAmount : 0
+    const currentSummary = activeTab === 'receivable' ? receivableSummary : summary;
+    const totalPaidOff = currentSummary ? currentSummary.totalOriginalAmount - currentSummary.totalRemainingAmount : 0
     const [thirtyDaysFromNow, setThirtyDaysFromNow] = useState<Date | null>(null)
 
     useEffect(() => {
@@ -397,17 +398,17 @@ export default function DebtsPage() {
             </div>
 
             {/* Summary Cards */}
-            {summary && (
+            {currentSummary && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-gradient-to-br from-red-500/10 to-background border-red-500/20">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-red-600 flex items-center gap-1.5">
-                                <TrendingDown className="h-4 w-4" /> Total Sisa Utang
+                                <TrendingDown className="h-4 w-4" /> {activeTab === "debt" ? "Total Sisa Utang" : "Total Sisa Piutang"}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl sm:text-2xl font-bold text-red-600">{formatCurrency(summary.totalRemainingAmount)}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Dari {formatCurrency(summary.totalOriginalAmount)} total</p>
+                            <div className="text-xl sm:text-2xl font-bold text-red-600">{formatCurrency(currentSummary.totalRemainingAmount)}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Dari {formatCurrency(currentSummary.totalOriginalAmount)} total</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-gradient-to-br from-orange-500/10 to-background border-orange-500/20">
@@ -417,7 +418,7 @@ export default function DebtsPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl sm:text-2xl font-bold text-orange-600">{formatCurrency(summary.totalMonthlyPayment)}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-orange-600">{formatCurrency(currentSummary.totalMonthlyPayment)}</div>
                             <p className="text-xs text-muted-foreground mt-1">Total kewajiban bulanan</p>
                         </CardContent>
                     </Card>
@@ -429,18 +430,18 @@ export default function DebtsPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(totalPaidOff)}</div>
-                            <p className="text-xs text-muted-foreground mt-1">Dari seluruh utang</p>
+                            <p className="text-xs text-muted-foreground mt-1">{activeTab === "debt" ? "Dari seluruh utang" : "Dari seluruh piutang"}</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-gradient-to-br from-blue-500/10 to-background border-blue-500/20">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-blue-600 flex items-center gap-1.5">
-                                <CreditCard className="h-4 w-4" /> Jumlah Utang
+                                <CreditCard className="h-4 w-4" /> {activeTab === "debt" ? "Jumlah Utang" : "Jumlah Piutang"}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl sm:text-2xl font-bold text-blue-600">{summary.count} <span className="text-sm font-normal text-muted-foreground">item</span></div>
-                            <p className="text-xs text-muted-foreground mt-1">Kewajiban aktif</p>
+                            <div className="text-xl sm:text-2xl font-bold text-blue-600">{currentSummary.count} <span className="text-sm font-normal text-muted-foreground">item</span></div>
+                            <p className="text-xs text-muted-foreground mt-1">{activeTab === "debt" ? "Kewajiban aktif" : "Tagihan aktif"}</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -568,7 +569,7 @@ export default function DebtsPage() {
                                     {/* Amounts */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-3 bg-muted/30">
                                         <div>
-                                            <p className="text-xs text-muted-foreground">Sisa Utang</p>
+                                            <p className="text-xs text-muted-foreground">{activeTab === "debt" ? "Sisa Utang" : "Sisa Piutang"}</p>
                                             <p className="font-bold text-red-600">{formatCurrency(debt.remainingAmount)}</p>
                                         </div>
                                         <div>
