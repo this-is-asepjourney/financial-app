@@ -319,7 +319,7 @@ export default function CategoriesPage() {
 
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">Pilih Ikon</label>
-                                    <div className="grid grid-cols-6 gap-2 bg-muted/30 p-2 rounded-md">
+                                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 bg-muted/30 p-2 rounded-md">
                                         {Object.keys(ICON_MAP).map((iconKey) => {
                                             const IconComponent = ICON_MAP[iconKey]
                                             return (
@@ -342,7 +342,7 @@ export default function CategoriesPage() {
 
                                 <div>
                                     <label className="text-sm font-medium mb-1 block">Pilih Warna</label>
-                                    <div className="grid grid-cols-8 gap-2 mb-2">
+                                    <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 mb-2">
                                         {PRESET_COLORS.map((color) => (
                                             <button
                                                 key={color}
@@ -502,7 +502,7 @@ export default function CategoriesPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex shrink-0 flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex shrink-0 flex-col gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"

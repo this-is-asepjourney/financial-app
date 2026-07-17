@@ -434,7 +434,7 @@ export default function WalletsPage() {
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                                                 <Button
                                                                     variant="ghost" size="icon"
                                                                     className="h-7 w-7 hover:bg-primary/10"
@@ -493,7 +493,7 @@ export default function WalletsPage() {
                                 placeholder="Contoh: BCA Utama, Dana Darurat BRI, Gopay"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <Label>Jenis Media</Label>
                                 <Select value={formData.type} onValueChange={v => setFormData({ ...formData, type: v })}>

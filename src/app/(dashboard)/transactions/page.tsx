@@ -396,9 +396,9 @@ export default function TransactionsPage() {
             {/* Transactions List */}
             <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <CardTitle>Daftar Transaksi</CardTitle>
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-2">
                             <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -485,7 +485,7 @@ export default function TransactionsPage() {
                                              transaction.type === 'expense' ? '-' : ''}
                                             {formatCurrency(transaction.amount)}
                                         </span>
-                                        <div className="flex space-x-2">
+                                        <div className="flex flex-wrap gap-2">
                                             {transaction.type !== 'transfer' && (
                                                 <Button
                                                     variant="ghost"
@@ -515,7 +515,7 @@ export default function TransactionsPage() {
                             <p className="text-sm text-muted-foreground">
                                 Halaman {page} dari {totalPages}
                             </p>
-                            <div className="flex space-x-2">
+                            <div className="flex flex-wrap gap-2">
                                 <Button
                                     variant="outline"
                                     size="sm"

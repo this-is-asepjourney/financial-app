@@ -116,8 +116,10 @@ export async function GET(_request: Request) {
         // Calculate debts explicitly from Debt model
         let totalDebtAmount = 0
         debts.forEach(debt => {
-            totalDebtAmount += debt.remainingAmount || debt.totalAmount;
-            monthlyDebtPayments += debt.monthlyPayment;
+            if (debt.debtType === 'debt') {
+                totalDebtAmount += debt.remainingAmount || debt.totalAmount;
+                monthlyDebtPayments += debt.monthlyPayment;
+            }
         });
 
         if (expensesByCategory.length > 0) {

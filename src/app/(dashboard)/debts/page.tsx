@@ -39,6 +39,15 @@ import {
     Home,
     ShoppingBag,
     Smartphone,
+    Users,
+    Building,
+    HandCoins,
+    Wallet,
+    ArrowUpFromLine,
+    ArrowDownToLine,
+    AlertCircle,
+    CheckCircle,
+    Coins,
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -46,6 +55,7 @@ import { cn } from '@/lib/utils'
 interface Debt {
     id: string
     name: string
+    debtType: string
     type: string
     totalAmount: number
     remainingAmount: number
@@ -54,6 +64,13 @@ interface Debt {
     dueDate: string | null
     createdAt: string
 }
+
+interface Wallet {
+    id: string
+    name: string
+    type: string
+}
+
 
 interface DebtSummary {
     totalRemainingAmount: number
@@ -72,18 +89,31 @@ const DEBT_TYPES = [
     { value: 'lainnya', label: 'Utang Lainnya', icon: BadgePercent, color: 'text-gray-600', bg: 'bg-gray-100' },
 ]
 
+
+const RECEIVABLE_TYPES = [
+    { value: 'teman', label: 'Teman/Keluarga', icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { value: 'kasbon', label: 'Kasbon Karyawan/Pekerjaan', icon: Building, color: 'text-indigo-600', bg: 'bg-indigo-100' },
+    { value: 'pinjaman', label: 'Pinjaman Pribadi', icon: HandCoins, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { value: 'lainnya', label: 'Piutang Lainnya', icon: Wallet, color: 'text-gray-600', bg: 'bg-gray-100' },
+]
+
+const getReceivableTypeInfo = (type: string) => {
+    return RECEIVABLE_TYPES.find(t => t.value === type) || RECEIVABLE_TYPES[RECEIVABLE_TYPES.length - 1]
+}
+
 const getDebtTypeInfo = (type: string) => {
     return DEBT_TYPES.find(t => t.value === type) || DEBT_TYPES[DEBT_TYPES.length - 1]
 }
 
 const EMPTY_FORM = {
     name: '',
-    type: 'kartu_kredit',
+    type: '',
     totalAmount: '',
     remainingAmount: '',
     monthlyPayment: '',
     interestRate: '',
     dueDate: '',
+    walletId: '',
 }
 
 export default function DebtsPage() {
@@ -92,23 +122,40 @@ export default function DebtsPage() {
     const { toast } = useToast()
 
     const [debts, setDebts] = useState<Debt[]>([])
+    const [wallets, setWallets] = useState<Wallet[]>([])
     const [summary, setSummary] = useState<DebtSummary | null>(null)
+    const [receivableSummary, setReceivableSummary] = useState<DebtSummary | null>(null)
+    const [activeTab, setActiveTab] = useState<'debt' | 'receivable'>('debt')
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
 
     const [showForm, setShowForm] = useState(false)
     const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showPayForm, setShowPayForm] = useState(false)
+    const [showInstallmentForm, setShowInstallmentForm] = useState(false)
+    const [installmentAmount, setInstallmentAmount] = useState('')
+    const [payingDebt, setPayingDebt] = useState<Debt | null>(null)
+    const [selectedWalletId, setSelectedWalletId] = useState('')
     const [form, setForm] = useState(EMPTY_FORM)
 
     const fetchDebts = useCallback(async () => {
         if (!user?.id) return
         try {
-            const res = await fetch('/api/debts')
-            if (res.ok) {
-                const data = await res.json()
+            const [debtsRes, walletsRes] = await Promise.all([
+                fetch('/api/debts'),
+                fetch(`/api/wallets?userId=${user.id}`)
+            ])
+            
+            if (debtsRes.ok) {
+                const data = await debtsRes.json()
                 setDebts(data.debts || [])
                 setSummary(data.summary)
+                setReceivableSummary(data.receivableSummary)
+            }
+            if (walletsRes.ok) {
+                const wData = await walletsRes.json()
+                setWallets(wData.wallets || [])
             }
         } catch (error) {
             console.error('Error fetching debts:', error)
@@ -131,7 +178,7 @@ export default function DebtsPage() {
 
     const openAddForm = () => {
         setEditingDebt(null)
-        setForm(EMPTY_FORM)
+        setForm({ ...EMPTY_FORM, type: activeTab === 'debt' ? 'kartu_kredit' : 'teman' })
         setShowForm(true)
     }
 
@@ -145,6 +192,7 @@ export default function DebtsPage() {
             monthlyPayment: debt.monthlyPayment.toString(),
             interestRate: debt.interestRate?.toString() || '',
             dueDate: debt.dueDate ? new Date(debt.dueDate).toISOString().split('T')[0] : '',
+            walletId: '',
         })
         setShowForm(true)
     }
@@ -157,11 +205,13 @@ export default function DebtsPage() {
         const payload = {
             name: form.name,
             type: form.type,
+            debtType: activeTab,
             totalAmount: form.totalAmount.replace(/\D/g, ''),
             remainingAmount: form.remainingAmount.replace(/\D/g, ''),
             monthlyPayment: form.monthlyPayment.replace(/\D/g, ''),
             interestRate: form.interestRate || null,
             dueDate: form.dueDate || null,
+            walletId: form.walletId || null,
         }
 
         try {
@@ -180,7 +230,9 @@ export default function DebtsPage() {
 
             toast({
                 title: 'Berhasil',
-                description: editingDebt ? 'Data utang berhasil diperbarui' : 'Utang baru berhasil ditambahkan',
+                description: editingDebt 
+                    ? (activeTab === 'debt' ? 'Data utang berhasil diperbarui' : 'Data piutang berhasil diperbarui') 
+                    : (activeTab === 'debt' ? 'Utang baru berhasil ditambahkan' : 'Piutang baru berhasil ditambahkan'),
             })
             setShowForm(false)
             fetchDebts()
@@ -190,6 +242,65 @@ export default function DebtsPage() {
                 description: error instanceof Error ? error.message : 'Gagal menyimpan data',
                 variant: 'destructive',
             })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handlePayInstallment = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!user?.id || !payingDebt || !selectedWalletId || !installmentAmount) return
+        
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`/api/debts/${payingDebt.id}/installment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: parseFloat(installmentAmount.replace(/\D/g, '')),
+                    walletId: selectedWalletId
+                }),
+            })
+
+            if (!res.ok) {
+                const err = await res.json()
+                throw new Error(err.error || 'Terjadi kesalahan saat memproses cicilan')
+            }
+
+            toast({ title: 'Berhasil', description: 'Cicilan berhasil dibayar' })
+            setShowInstallmentForm(false)
+            fetchDebts()
+        } catch (error: unknown) {
+            toast({
+                title: 'Error',
+                description: error instanceof Error ? error.message : 'Gagal memproses cicilan',
+                variant: 'destructive',
+            })
+        } finally {
+            setIsSubmitting(false)
+            setPayingDebt(null)
+            setSelectedWalletId('')
+            setInstallmentAmount('')
+        }
+    }
+
+    const handlePay = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!payingDebt) return
+        setIsSubmitting(true)
+
+        try {
+            const res = await fetch(`/api/debts/${payingDebt.id}/pay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ walletId: selectedWalletId }),
+            })
+            if (!res.ok) throw new Error()
+            toast({ title: 'Berhasil', description: 'Pelunasan berhasil diproses' })
+            setShowPayForm(false)
+            fetchDebts()
+        } catch {
+            toast({ title: 'Error', description: 'Gagal memproses pelunasan', variant: 'destructive' })
         } finally {
             setIsSubmitting(false)
         }
@@ -265,6 +376,26 @@ export default function DebtsPage() {
                 </div>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-border">
+                <button 
+                    onClick={() => setActiveTab('debt')} 
+                    className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors relative ${activeTab === 'debt' ? 'text-red-600' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                    <ArrowUpFromLine className="w-4 h-4" />
+                    Utang
+                    {activeTab === 'debt' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600" />}
+                </button>
+                <button 
+                    onClick={() => setActiveTab('receivable')} 
+                    className={`flex items-center gap-2 px-6 py-3 font-medium text-sm transition-colors relative ${activeTab === 'receivable' ? 'text-emerald-600' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                    <ArrowDownToLine className="w-4 h-4" />
+                    Piutang
+                    {activeTab === 'receivable' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600" />}
+                </button>
+            </div>
+
             {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -324,25 +455,27 @@ export default function DebtsPage() {
                         </Card>
                     ))}
                 </div>
-            ) : debts.length === 0 ? (
+            ) : debts.filter(d => d.debtType === activeTab).length === 0 ? (
                 <Card className="border-dashed border-2">
                     <CardContent className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-5">
                             <CreditCard className="h-10 w-10 text-red-400" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">Tidak ada utang tercatat</h3>
+                        <h3 className="text-xl font-semibold mb-2">Tidak ada {activeTab === 'debt' ? 'utang' : 'piutang'} tercatat</h3>
                         <p className="text-muted-foreground max-w-sm mb-6">
-                            Catat utang dan cicilan Anda agar Financial Health Score akurat dan terpantau dengan baik.
+                            {activeTab === 'debt' 
+                                ? 'Catat utang dan cicilan Anda agar Financial Health Score akurat dan terpantau dengan baik.'
+                                : 'Catat piutang Anda untuk memantau uang yang dipinjamkan ke pihak lain.'}
                         </p>
                         <Button onClick={openAddForm} className="gap-2">
-                            <Plus className="h-4 w-4" /> Tambah Utang Pertama
+                            <Plus className="h-4 w-4" /> Tambah {activeTab === 'debt' ? 'Utang' : 'Piutang'} Pertama
                         </Button>
                     </CardContent>
                 </Card>
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {debts.map((debt, index) => {
-                        const typeInfo = getDebtTypeInfo(debt.type)
+                    {debts.filter(d => d.debtType === activeTab).map((debt, index) => {
+                        const typeInfo = activeTab === 'debt' ? getDebtTypeInfo(debt.type) : getReceivableTypeInfo(debt.type)
                         const TypeIcon = typeInfo.icon
                         const paidPct = paidOffPercent(debt)
                         const months = monthsToPayOff(debt)
@@ -369,7 +502,30 @@ export default function DebtsPage() {
                                                 <p className="text-xs text-muted-foreground mt-0.5">{typeInfo.label}</p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-blue-100 text-blue-600"
+                                                onClick={() => { 
+                                                    setPayingDebt(debt); 
+                                                    setSelectedWalletId(''); 
+                                                    setInstallmentAmount(debt.monthlyPayment.toString());
+                                                    setShowInstallmentForm(true); 
+                                                }}
+                                                title="Bayar Cicilan"
+                                            >
+                                                <Coins className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 hover:bg-green-100 text-green-600"
+                                                onClick={() => { setPayingDebt(debt); setSelectedWalletId(''); setShowPayForm(true); }}
+                                                title="Tandai Lunas"
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -410,7 +566,7 @@ export default function DebtsPage() {
                                     </div>
 
                                     {/* Amounts */}
-                                    <div className="grid grid-cols-2 gap-3 px-5 py-3 bg-muted/30">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-5 py-3 bg-muted/30">
                                         <div>
                                             <p className="text-xs text-muted-foreground">Sisa Utang</p>
                                             <p className="font-bold text-red-600">{formatCurrency(debt.remainingAmount)}</p>
@@ -463,37 +619,35 @@ export default function DebtsPage() {
             <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) setEditingDebt(null) }}>
                 <DialogContent className="sm:max-w-[520px]">
                     <DialogHeader>
-                        <DialogTitle>{editingDebt ? 'Edit Data Utang' : 'Tambah Utang Baru'}</DialogTitle>
+                        <DialogTitle>{editingDebt ? (activeTab === 'debt' ? 'Edit Data Utang' : 'Edit Data Piutang') : (activeTab === 'debt' ? 'Tambah Utang Baru' : 'Tambah Piutang Baru')}</DialogTitle>
                         <DialogDescription>
-                            {editingDebt
-                                ? 'Perbarui informasi utang Anda'
-                                : 'Catat kewajiban finansial untuk memantau kesehatan keuangan'}
+                            {editingDebt ? (activeTab === 'debt' ? 'Perbarui informasi utang Anda' : 'Perbarui informasi piutang Anda') : (activeTab === 'debt' ? 'Catat kewajiban finansial untuk memantau kesehatan keuangan' : 'Catat uang yang Anda pinjamkan ke pihak lain')}
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2 space-y-1.5">
-                                <Label>Nama Utang/Kredit</Label>
+                                <Label>{activeTab === 'debt' ? 'Nama Utang/Kredit' : 'Nama Peminjam / Tujuan Piutang'}</Label>
                                 <Input
                                     required
                                     value={form.name}
                                     onChange={e => setFormField('name', e.target.value)}
-                                    placeholder="Contoh: KPR Rumah Cilandak, Kartu Kredit BCA"
+                                    placeholder={activeTab === 'debt' ? 'Contoh: KPR Rumah Cilandak, Kartu Kredit BCA' : 'Contoh: Budi, Kasbon Karyawan'}
                                 />
                             </div>
                             <div className="col-span-2 space-y-1.5">
-                                <Label>Jenis Utang</Label>
+                                <Label>{activeTab === 'debt' ? 'Jenis Utang' : 'Jenis Piutang'}</Label>
                                 <Select value={form.type} onValueChange={v => setFormField('type', v)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        {DEBT_TYPES.map(t => (
+                                        {(activeTab === 'debt' ? DEBT_TYPES : RECEIVABLE_TYPES).map(t => (
                                             <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Total Utang Awal (Rp)</Label>
+                                <Label>{activeTab === 'debt' ? 'Total Utang Awal (Rp)' : 'Total Pinjaman (Rp)'}</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
                                     <Input
@@ -506,7 +660,7 @@ export default function DebtsPage() {
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Sisa Utang Saat Ini (Rp)</Label>
+                                <Label>{activeTab === 'debt' ? 'Sisa Utang Saat Ini (Rp)' : 'Sisa Piutang Saat Ini (Rp)'}</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
                                     <Input
@@ -519,7 +673,7 @@ export default function DebtsPage() {
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <Label>Cicilan per Bulan (Rp)</Label>
+                                <Label>{activeTab === 'debt' ? 'Cicilan per Bulan (Rp)' : 'Ekspektasi Cicilan Masuk (Rp)'}</Label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
                                     <Input
@@ -553,6 +707,22 @@ export default function DebtsPage() {
                                     onChange={e => setFormField('dueDate', e.target.value)}
                                 />
                             </div>
+                            {!editingDebt && (
+                                <div className="col-span-2 space-y-1.5 mt-2">
+                                    <Label>{activeTab === 'debt' ? 'Tujuan Dana (Opsional)' : 'Sumber Dana (Opsional)'}</Label>
+                                    <Select value={form.walletId} onValueChange={v => setFormField('walletId', v)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih dompet..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {(wallets || []).map(w => (
+                                                <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">Jika dipilih, saldo dompet akan otomatis disesuaikan</p>
+                                </div>
+                            )}
                         </div>
                         <DialogFooter className="pt-2">
                             <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>Batal</Button>
@@ -561,7 +731,89 @@ export default function DebtsPage() {
                                 disabled={isSubmitting}
                                 className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700"
                             >
-                                {isSubmitting ? 'Menyimpan...' : editingDebt ? 'Simpan Perubahan' : 'Tambah Utang'}
+                                {isSubmitting ? 'Menyimpan...' : editingDebt ? 'Simpan Perubahan' : activeTab === 'debt' ? 'Tambah Utang' : 'Tambah Piutang'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+                        {/* Installment Dialog */}
+            <Dialog open={showInstallmentForm} onOpenChange={setShowInstallmentForm}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>{activeTab === 'debt' ? 'Bayar Cicilan Utang' : 'Terima Cicilan Piutang'}</DialogTitle>
+                        <DialogDescription>
+                            Masukkan nominal cicilan untuk <strong>{payingDebt?.name}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePayInstallment} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Nominal Cicilan (Rp)</Label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">Rp</span>
+                                <Input
+                                    required
+                                    className="pl-9"
+                                    value={installmentAmount ? parseInt(installmentAmount.toString().replace(/\D/g, '') || '0').toLocaleString('id-ID') : ''}
+                                    onChange={e => setInstallmentAmount(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="0"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>{activeTab === 'debt' ? 'Sumber Dana' : 'Tujuan Dana'}</Label>
+                            <Select required value={selectedWalletId} onValueChange={setSelectedWalletId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih dompet" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(wallets || []).map(w => (
+                                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Sisa tagihan saat ini: Rp {payingDebt?.remainingAmount?.toLocaleString('id-ID')}
+                            </p>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowInstallmentForm(false)}>Batal</Button>
+                            <Button type="submit" disabled={isSubmitting || !selectedWalletId || !installmentAmount}>
+                                {isSubmitting ? 'Memproses...' : 'Selesai'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Pay Dialog (Lunas) */}
+            <Dialog open={showPayForm} onOpenChange={setShowPayForm}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Tandai Lunas</DialogTitle>
+                        <DialogDescription>
+                            Pilih dompet tujuan pengembalian dana untuk <strong>{payingDebt?.name}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handlePay} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label>Pilih Dompet</Label>
+                            <Select required value={selectedWalletId} onValueChange={setSelectedWalletId}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Pilih dompet" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(wallets || []).map(w => (
+                                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowPayForm(false)}>Batal</Button>
+                            <Button type="submit" disabled={isSubmitting || !selectedWalletId}>
+                                {isSubmitting ? 'Memproses...' : 'Selesai'}
                             </Button>
                         </DialogFooter>
                     </form>

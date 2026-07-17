@@ -355,7 +355,7 @@ export default function InvestmentsPage() {
                                                     <p className="text-xs text-white/70 mt-0.5">{typeInfo.label}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     className="w-7 h-7 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center"
                                                     onClick={() => openEditForm(inv)}
@@ -427,7 +427,7 @@ export default function InvestmentsPage() {
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2 space-y-1.5">
                                 <Label>Nama Investasi</Label>
                                 <Input

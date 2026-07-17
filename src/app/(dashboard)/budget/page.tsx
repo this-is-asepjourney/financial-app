@@ -643,7 +643,7 @@ function BudgetCard({ budget, onEdit, onDelete, onPay, isPaid }: { budget: Budge
                         <span className="text-sm font-medium text-muted-foreground">Target / Tagihan</span>
                         <span className="font-bold text-lg">{formatCurrency(budget.amount)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <span className="text-sm font-medium text-muted-foreground">Dibayar / Terpakai</span>
                         <span className={`font-bold text-lg ${isPaid ? 'text-green-600' : 'text-blue-600'}`}>{formatCurrency(budget.spent)}</span>
                     </div>

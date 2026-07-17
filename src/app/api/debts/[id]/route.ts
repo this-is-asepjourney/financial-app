@@ -13,13 +13,14 @@ export async function PUT(
 
         const { id } = await params
         const body = await request.json()
-        const { name, type, totalAmount, remainingAmount, monthlyPayment, interestRate, dueDate } = body
+        const { name, type, debtType, totalAmount, remainingAmount, monthlyPayment, interestRate, dueDate } = body
 
         const debt = await prisma.debt.update({
             where: { id },
             data: {
                 name,
                 type,
+                ...(debtType ? { debtType } : {}),
                 totalAmount: parseFloat(totalAmount),
                 remainingAmount: parseFloat(remainingAmount),
                 monthlyPayment: parseFloat(monthlyPayment),
