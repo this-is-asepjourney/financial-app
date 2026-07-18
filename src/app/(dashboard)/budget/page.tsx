@@ -284,7 +284,13 @@ export default function BudgetPage() {
 
     const totalBudget = budgets.reduce((sum, b) => sum + b.amount, 0)
     const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0)
-    const totalPercentage = calculatePercentage(totalSpent, totalBudget)
+    
+    // "Sisa yang Belum Dibayar" only counts budgets that haven't been fully paid
+    const totalRemaining = budgets.reduce((sum, b) => sum + Math.max(0, b.amount - b.spent), 0)
+
+    // For overall progress, cap the spent amount per budget so overspending doesn't skew the overall progress
+    const totalProgressSpent = budgets.reduce((sum, b) => sum + Math.min(b.spent, b.amount), 0)
+    const totalPercentage = calculatePercentage(totalProgressSpent, totalBudget)
 
     const getStatusColor = (spent: number, amount: number) => {
         const percentage = (spent / amount) * 100
@@ -479,21 +485,21 @@ export default function BudgetPage() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-muted-foreground mb-1">Sisa yang Belum Dibayar</p>
-                            <p className={`text-3xl font-bold ${totalBudget - totalSpent >= 0 ? 'text-amber-600' : 'text-red-600'}`}>
-                                {formatCurrency(Math.max(0, totalBudget - totalSpent))}
+                            <p className={`text-3xl font-bold ${totalRemaining > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                                {formatCurrency(totalRemaining)}
                             </p>
                         </div>
                     </div>
                     <div className="mt-6">
                         <div className="flex justify-between text-sm mb-2 font-medium">
                             <span>Progress Keseluruhan</span>
-                            <span className={getStatusColor(totalSpent, totalBudget)}>
+                            <span className={getStatusColor(totalProgressSpent, totalBudget)}>
                                 {totalPercentage}%
                             </span>
                         </div>
                         <Progress
                             value={Math.min(totalPercentage, 100)}
-                            className={`h-3 ${getProgressColor(totalSpent, totalBudget)}`}
+                            className={`h-3 ${getProgressColor(totalProgressSpent, totalBudget)}`}
                         />
                     </div>
                 </CardContent>
