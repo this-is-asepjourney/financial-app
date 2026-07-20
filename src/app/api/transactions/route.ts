@@ -15,12 +15,13 @@ export async function GET(request: Request) {
         const month = searchParams.get('month')
         const type = searchParams.get('type')
         const categoryId = searchParams.get('categoryId')
+        const walletId = searchParams.get('walletId')
         const search = searchParams.get('search')
         const isExport = searchParams.get('export') === 'true'
         const page = parseInt(searchParams.get('page') || '1')
         const limit = parseInt(searchParams.get('limit') || '20')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = { userId }
+        const where: any = { userId, AND: [] }
 
         if (month) {
             const date = new Date(month)
@@ -31,11 +32,26 @@ export async function GET(request: Request) {
         if (type) where.type = type
         if (categoryId) where.categoryId = categoryId
 
+        if (walletId) {
+            where.AND.push({
+                OR: [
+                    { walletId },
+                    { toWalletId: walletId }
+                ]
+            })
+        }
+
         if (search) {
-            where.OR = [
-                { description: { contains: search } },
-                { category: { name: { contains: search } } },
-            ]
+            where.AND.push({
+                OR: [
+                    { description: { contains: search } },
+                    { category: { name: { contains: search } } },
+                ]
+            })
+        }
+        
+        if (where.AND.length === 0) {
+            delete where.AND;
         }
 
         const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc'

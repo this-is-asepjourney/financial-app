@@ -207,8 +207,8 @@ export default function DashboardLayout({
                                 className={cn(
                                     'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
                                     active
-                                        ? `${item.bgColor} dark:bg-gray-700 ${item.color} dark:text-white font-medium`
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
+                                        ? `${item.bgColor} dark:bg-gray-700/50 ${item.color} dark:text-white font-semibold shadow-sm border border-${item.color.split('-')[1]}-200/50 dark:border-gray-600`
+                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-700/50 hover:text-gray-900 dark:hover:text-gray-200 hover:translate-x-1'
                                 )}
                             >
                                 <Icon
@@ -248,7 +248,7 @@ export default function DashboardLayout({
             {/* Main Content */}
             <div className="lg:pl-64">
                 {/* Top Navbar */}
-                <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800 shadow-sm">
                     <div className="flex items-center justify-between h-16 px-4 lg:px-6">
                         {/* Left side */}
                         <div className="flex items-center space-x-4">
@@ -302,7 +302,7 @@ export default function DashboardLayout({
                             {/* User Menu */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="flex items-center space-x-2">
+                                    <Button variant="ghost" className="flex items-center space-x-2 hover:bg-indigo-50 dark:hover:bg-gray-800 transition-colors">
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 flex items-center justify-center">
                                             <User className="h-4 w-4 text-white" />
                                         </div>

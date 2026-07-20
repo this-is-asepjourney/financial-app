@@ -143,8 +143,8 @@ export default function DebtsPage() {
         if (!user?.id) return
         try {
             const [debtsRes, walletsRes] = await Promise.all([
-                fetch('/api/debts'),
-                fetch(`/api/wallets?userId=${user.id}`)
+                fetch(`/api/debts?t=${Date.now()}`, { cache: 'no-store' }),
+                fetch(`/api/wallets?userId=${user.id}&t=${Date.now()}`, { cache: 'no-store' })
             ])
             
             if (debtsRes.ok) {
@@ -235,7 +235,7 @@ export default function DebtsPage() {
                     : (activeTab === 'debt' ? 'Utang baru berhasil ditambahkan' : 'Piutang baru berhasil ditambahkan'),
             })
             setShowForm(false)
-            fetchDebts()
+            await fetchDebts()
         } catch (error: unknown) {
             toast({
                 title: 'Error',
@@ -269,7 +269,7 @@ export default function DebtsPage() {
 
             toast({ title: 'Berhasil', description: 'Cicilan berhasil dibayar' })
             setShowInstallmentForm(false)
-            fetchDebts()
+            await fetchDebts()
         } catch (error: unknown) {
             toast({
                 title: 'Error',
@@ -298,7 +298,7 @@ export default function DebtsPage() {
             if (!res.ok) throw new Error()
             toast({ title: 'Berhasil', description: 'Pelunasan berhasil diproses' })
             setShowPayForm(false)
-            fetchDebts()
+            await fetchDebts()
         } catch {
             toast({ title: 'Error', description: 'Gagal memproses pelunasan', variant: 'destructive' })
         } finally {
@@ -312,7 +312,7 @@ export default function DebtsPage() {
             const res = await fetch(`/api/debts/${debt.id}`, { method: 'DELETE' })
             if (!res.ok) throw new Error()
             toast({ title: 'Berhasil', description: 'Utang berhasil dihapus' })
-            fetchDebts()
+            await fetchDebts()
         } catch {
             toast({ title: 'Error', description: 'Gagal menghapus utang', variant: 'destructive' })
         }

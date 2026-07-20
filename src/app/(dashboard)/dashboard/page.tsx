@@ -15,6 +15,8 @@ import {
     Target,
     AlertCircle,
     RefreshCw,
+    CreditCard,
+    HandCoins,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -43,6 +45,8 @@ interface DashboardData {
         color: string
     }[]
     allTimeTotalExpenses: number
+    debtsSummary: { totalRemaining: number, count: number }
+    receivablesSummary: { totalRemaining: number, count: number }
     healthScore: {
         score: number
         status: 'excellent' | 'good' | 'fair' | 'poor'
@@ -65,18 +69,36 @@ export default function DashboardPage() {
         }
         try {
             // Fetch all dashboard data
-            const [summaryRes, categoryRes, healthRes, walletsRes, allTimeCategoryRes] = await Promise.all([
+            const [summaryRes, categoryRes, healthRes, walletsRes, allTimeCategoryRes, debtsRes] = await Promise.all([
                 fetch(`/api/reports/monthly-summary?userId=${user?.id}`),
                 fetch(`/api/reports/category-analysis?userId=${user?.id}`),
                 fetch(`/api/financial-health?userId=${user?.id}`),
                 fetch(`/api/wallets?userId=${user?.id}`),
-                fetch(`/api/reports/category-analysis?userId=${user?.id}&timeframe=all`)
+                fetch(`/api/reports/category-analysis?userId=${user?.id}&timeframe=all`),
+                fetch(`/api/debts`)
             ])
 
             const summary = await summaryRes.json()
             const category = await categoryRes.json()
             const health = await healthRes.json()
             const allTimeCategory = await allTimeCategoryRes.json()
+            let debtsSummary = { totalRemaining: 0, count: 0 }
+            let receivablesSummary = { totalRemaining: 0, count: 0 }
+            
+            if (debtsRes.ok) {
+                const debtsData = await debtsRes.json()
+                const debts = debtsData.debts || []
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                debts.forEach((d: any) => {
+                    if (d.type === 'debt') {
+                        debtsSummary.totalRemaining += d.remainingAmount
+                        debtsSummary.count++
+                    } else if (d.type === 'receivable') {
+                        receivablesSummary.totalRemaining += d.remainingAmount
+                        receivablesSummary.count++
+                    }
+                })
+            }
             
             if (walletsRes.ok) {
                 const walletsData = await walletsRes.json()
@@ -98,6 +120,8 @@ export default function DashboardPage() {
                 categoryData: category.analysis || [],
                 allTimeCategoryData: allTimeCategory.analysis || [],
                 allTimeTotalExpenses: allTimeCategory.totalAmount || 0,
+                debtsSummary,
+                receivablesSummary,
                 healthScore: {
                     score: health.health?.overallScore || 0,
                     status: health.health?.status || 'fair',
@@ -155,58 +179,96 @@ export default function DashboardPage() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-green-50 to-white dark:from-green-950/20 dark:to-background border-green-100 dark:border-green-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Pemasukan</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">Pemasukan</CardTitle>
+                        <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-xl lg:text-2xl font-bold text-green-700 dark:text-green-400">
                             {formatCurrency(data?.summary.totalIncome || 0)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Bulan ini</p>
+                        <p className="text-xs text-green-600/70 dark:text-green-400/70 mt-1">Bulan ini</p>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-red-50 to-white dark:from-red-950/20 dark:to-background border-red-100 dark:border-red-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Pengeluaran</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-red-600" />
+                        <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Pengeluaran</CardTitle>
+                        <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">
+                        <div className="text-xl lg:text-2xl font-bold text-red-700 dark:text-red-400">
                             {formatCurrency(data?.summary.totalExpenses || 0)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Bulan ini</p>
+                        <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-1">Bulan ini</p>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background border-blue-100 dark:border-blue-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Saldo Seluruh Dompet</CardTitle>
-                        <DollarSign className="h-4 w-4 text-blue-600" />
+                        <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">Saldo Dompet</CardTitle>
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                            <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-xl lg:text-2xl font-bold text-blue-700 dark:text-blue-400">
                             {formatCurrency(totalWalletBalance)}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 text-green-600">
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                             +{formatCurrency(data?.summary.balance || 0)} bulan ini
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background border-purple-100 dark:border-purple-900">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Tabungan Rate</CardTitle>
-                        <PiggyBank className="h-4 w-4 text-purple-600" />
+                        <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-400">Rate Tabungan</CardTitle>
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                            <PiggyBank className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-purple-600">
+                        <div className="text-xl lg:text-2xl font-bold text-purple-700 dark:text-purple-400">
                             {data?.summary.savingsRate.toFixed(1)}%
                         </div>
-                        <p className="text-xs text-muted-foreground">Dari pemasukan</p>
+                        <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">Dari pemasukan</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-rose-50 to-white dark:from-rose-950/20 dark:to-background border-rose-100 dark:border-rose-900">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-rose-700 dark:text-rose-400">Sisa Utang</CardTitle>
+                        <div className="p-2 bg-rose-100 dark:bg-rose-900/50 rounded-lg">
+                            <CreditCard className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl lg:text-2xl font-bold text-rose-700 dark:text-rose-400">
+                            {formatCurrency(data?.debtsSummary?.totalRemaining || 0)}
+                        </div>
+                        <p className="text-xs text-rose-600/70 dark:text-rose-400/70 mt-1">{data?.debtsSummary?.count || 0} utang aktif</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background border-emerald-100 dark:border-emerald-900">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-400">Sisa Piutang</CardTitle>
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                            <HandCoins className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl lg:text-2xl font-bold text-emerald-700 dark:text-emerald-400">
+                            {formatCurrency(data?.receivablesSummary?.totalRemaining || 0)}
+                        </div>
+                        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">{data?.receivablesSummary?.count || 0} piutang aktif</p>
                     </CardContent>
                 </Card>
             </div>
