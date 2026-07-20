@@ -33,7 +33,7 @@ import {
     TrendingDown,
     CalendarClock,
     CreditCard
-} from 'lucide-react'
+, ChevronDown, ChevronUp, RefreshCw, ArrowRightLeft, Wallet} from 'lucide-react'
 
 interface Budget {
     id: string
@@ -574,6 +574,33 @@ export default function BudgetPage() {
 function BudgetCard({ budget, onEdit, onDelete, onPay, isPaid }: { budget: Budget, onEdit: () => void, onDelete: () => void, onPay?: () => void, isPaid: boolean }) {
     const percentage = calculatePercentage(budget.spent, budget.amount)
     const isOverBudget = budget.spent > budget.amount
+    
+    const [isExpanded, setIsExpanded] = useState(false)
+    const [transactions, setTransactions] = useState<any[]>([])
+    const [isLoadingTx, setIsLoadingTx] = useState(false)
+
+    const fetchTransactions = async () => {
+        setIsLoadingTx(true)
+        try {
+            // budget.month is e.g. '2023-10-01', we can pass it directly as month param
+            const res = await fetch(`/api/transactions?categoryId=${budget.category.id}&month=${budget.month.substring(0, 7)}&limit=50`)
+            if (res.ok) {
+                const data = await res.json()
+                setTransactions(data.transactions || [])
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setIsLoadingTx(false)
+        }
+    }
+
+    const toggleExpand = () => {
+        if (!isExpanded && transactions.length === 0) {
+            fetchTransactions()
+        }
+        setIsExpanded(!isExpanded)
+    }
 
     const getDaysLeftText = (dueDateString: string | null, isRecurring: boolean) => {
         if (!dueDateString) return null
@@ -675,6 +702,47 @@ function BudgetCard({ budget, onEdit, onDelete, onPay, isPaid }: { budget: Budge
                             </Button>
                         </div>
                     )}
+                    
+                    {/* Transactions Dropdown (Accordion) */}
+                    <div className="pt-4 mt-2 border-t border-slate-100">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full flex items-center justify-between text-muted-foreground hover:text-primary h-8"
+                            onClick={toggleExpand}
+                        >
+                            <span className="text-xs font-semibold">Riwayat Transaksi Tagihan Ini</span>
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                        
+                        {isExpanded && (
+                            <div className="mt-3 space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                {isLoadingTx ? (
+                                    <div className="flex justify-center p-4">
+                                        <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                                    </div>
+                                ) : transactions.length === 0 ? (
+                                    <p className="text-center text-xs text-muted-foreground p-4">Belum ada transaksi</p>
+                                ) : (
+                                    transactions.map(tx => (
+                                        <div key={tx.id} className="flex justify-between items-center p-2.5 bg-slate-50 rounded border border-slate-100 text-sm">
+                                            <div>
+                                                <p className="font-medium text-xs leading-tight line-clamp-1">{tx.description || tx.category?.name || 'Transaksi'}</p>
+                                                <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                                                    <span>{new Date(tx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-0.5"><Wallet className="h-3 w-3" /> {tx.wallet?.name || 'Unknown'}</span>
+                                                </div>
+                                            </div>
+                                            <p className="font-bold text-xs text-red-600 shrink-0">
+                                                -{formatCurrency(tx.amount)}
+                                            </p>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>

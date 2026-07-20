@@ -63,9 +63,22 @@ export async function GET(request: Request) {
             percentage: totalAmount > 0 ? (item.totalAmount / totalAmount) * 100 : 0,
         }))
 
+        let firstTransactionDate = null
+        if (timeframe === 'all') {
+            const firstTx = await prisma.transaction.findFirst({
+                where: { userId, type },
+                orderBy: { date: 'asc' },
+                select: { date: true }
+            })
+            if (firstTx) {
+                firstTransactionDate = firstTx.date
+            }
+        }
+
         return NextResponse.json({
             analysis: analysisWithPercentage,
             totalAmount,
+            firstTransactionDate
         })
     } catch (error) {
         console.error('Error analyzing categories:', error)

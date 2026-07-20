@@ -1,4 +1,8 @@
-'use client'
+import os
+
+file_path = r'd:\repository\financial-app\src\app\(dashboard)\dashboard\page.tsx'
+
+content = """'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
@@ -28,7 +32,6 @@ import {
     ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CalendarDays, AlertTriangle } from 'lucide-react'
 
 interface DashboardData {
     summary: {
@@ -55,7 +58,6 @@ interface DashboardData {
         color: string
     }[]
     allTimeTotalExpenses: number
-    firstTransactionDate: string | null
     debtsSummary: { totalRemaining: number, count: number }
     receivablesSummary: { totalRemaining: number, count: number }
     healthScore: {
@@ -116,10 +118,10 @@ export default function DashboardPage() {
                 topDebts = active.slice(0, 4) // top 4 active debts/receivables
                 
                 debts.forEach((d: any) => {
-                    if (d.debtType === 'debt') {
+                    if (d.type === 'debt') {
                         debtsSummary.totalRemaining += d.remainingAmount
                         debtsSummary.count++
-                    } else if (d.debtType === 'receivable') {
+                    } else if (d.type === 'receivable') {
                         receivablesSummary.totalRemaining += d.remainingAmount
                         receivablesSummary.count++
                     }
@@ -166,7 +168,6 @@ export default function DashboardPage() {
                 categoryData: category.analysis || [],
                 allTimeCategoryData: allTimeCategory.analysis || [],
                 allTimeTotalExpenses: allTimeCategory.totalAmount || 0,
-                firstTransactionDate: allTimeCategory.firstTransactionDate || null,
                 debtsSummary,
                 receivablesSummary,
                 topBudgets,
@@ -215,7 +216,7 @@ export default function DashboardPage() {
 
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-slate-100 dark:to-slate-400">
                         Dashboard
@@ -244,7 +245,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-emerald-700 dark:text-emerald-400">
+                        <div className="text-xl lg:text-2xl font-bold text-emerald-700 dark:text-emerald-400">
                             {formatCurrency(data?.summary.totalIncome || 0)}
                         </div>
                         <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">Bulan ini</p>
@@ -259,7 +260,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-rose-700 dark:text-rose-400">
+                        <div className="text-xl lg:text-2xl font-bold text-rose-700 dark:text-rose-400">
                             {formatCurrency(data?.summary.totalExpenses || 0)}
                         </div>
                         <p className="text-xs text-rose-600/70 dark:text-rose-400/70 mt-1">Bulan ini</p>
@@ -274,7 +275,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-blue-700 dark:text-blue-400">
+                        <div className="text-xl lg:text-2xl font-bold text-blue-700 dark:text-blue-400">
                             {formatCurrency(totalWalletBalance)}
                         </div>
                         <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-medium">
@@ -291,7 +292,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-purple-700 dark:text-purple-400">
+                        <div className="text-xl lg:text-2xl font-bold text-purple-700 dark:text-purple-400">
                             {data?.summary.savingsRate.toFixed(1)}%
                         </div>
                         <p className="text-xs text-purple-600/70 dark:text-purple-400/70 mt-1">Dari pemasukan</p>
@@ -306,7 +307,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-amber-700 dark:text-amber-400">
+                        <div className="text-xl lg:text-2xl font-bold text-amber-700 dark:text-amber-400">
                             {formatCurrency(data?.debtsSummary?.totalRemaining || 0)}
                         </div>
                         <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">{data?.debtsSummary?.count || 0} utang aktif</p>
@@ -321,7 +322,7 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg sm:text-xl lg:text-2xl font-bold truncate text-teal-700 dark:text-teal-400">
+                        <div className="text-xl lg:text-2xl font-bold text-teal-700 dark:text-teal-400">
                             {formatCurrency(data?.receivablesSummary?.totalRemaining || 0)}
                         </div>
                         <p className="text-xs text-teal-600/70 dark:text-teal-400/70 mt-1">{data?.receivablesSummary?.count || 0} piutang aktif</p>
@@ -330,7 +331,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Row 2: Macro Analysis (Income vs Expense & Health Score) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-6">
                 <Card className="shadow-sm border-slate-200/60 dark:border-slate-800/60">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -352,7 +353,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Row 3: Daily Operations (Budgets, Goals, Debts) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-3 gap-6">
                 {/* Budget Column */}
                 <Card className="shadow-sm border-slate-200/60 dark:border-slate-800/60 flex flex-col">
                     <CardHeader className="pb-3 border-b border-slate-100 dark:border-slate-800/60">
@@ -374,11 +375,11 @@ export default function DashboardPage() {
                                     return (
                                         <div key={b.id} className="space-y-2 group">
                                             <div className="flex justify-between items-center text-sm">
-                                                <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: b.category?.color || '#cbd5e1' }} />
-                                                    <span className="font-medium truncate">{b.category?.name}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: b.category?.color || '#cbd5e1' }} />
+                                                    <span className="font-medium">{b.category?.name}</span>
                                                 </div>
-                                                <span className="text-muted-foreground font-medium text-xs shrink-0">
+                                                <span className="text-muted-foreground font-medium text-xs">
                                                     {formatCurrency(b.spent)} / {formatCurrency(b.amount)}
                                                 </span>
                                             </div>
@@ -418,8 +419,8 @@ export default function DashboardPage() {
                                     return (
                                         <div key={g.id} className="space-y-2">
                                             <div className="flex justify-between items-center text-sm">
-                                                <span className="font-medium truncate mr-2">{g.name}</span>
-                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs shrink-0">{percent}%</span>
+                                                <span className="font-medium line-clamp-1">{g.name}</span>
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">{percent}%</span>
                                             </div>
                                             <Progress value={Math.min(percent, 100)} className="h-2 bg-emerald-100 [&>div]:bg-emerald-500" />
                                             <p className="text-[11px] text-muted-foreground text-right mt-1">
@@ -458,16 +459,16 @@ export default function DashboardPage() {
                                 {data.topDebts.map((d: any) => (
                                     <div key={d.id} className="p-4 flex justify-between items-center hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${d.debtType === 'debt' ? 'bg-rose-100 text-rose-600' : 'bg-teal-100 text-teal-600'}`}>
-                                                {d.debtType === 'debt' ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${d.type === 'debt' ? 'bg-rose-100 text-rose-600' : 'bg-teal-100 text-teal-600'}`}>
+                                                {d.type === 'debt' ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="font-medium text-sm leading-tight truncate">{d.personName}</p>
-                                                <p className="text-[11px] text-muted-foreground">{d.debtType === 'debt' ? 'Anda berutang' : 'Berutang ke Anda'}</p>
+                                            <div>
+                                                <p className="font-medium text-sm leading-tight">{d.personName}</p>
+                                                <p className="text-[11px] text-muted-foreground">{d.type === 'debt' ? 'Anda berutang' : 'Berutang ke Anda'}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right shrink-0 ml-2">
-                                            <p className={`font-bold text-sm ${d.debtType === 'debt' ? 'text-rose-600 dark:text-rose-400' : 'text-teal-600 dark:text-teal-400'}`}>
+                                        <div className="text-right">
+                                            <p className={`font-bold text-sm ${d.type === 'debt' ? 'text-rose-600 dark:text-rose-400' : 'text-teal-600 dark:text-teal-400'}`}>
                                                 {formatCurrency(d.remainingAmount)}
                                             </p>
                                             {d.dueDate && (
@@ -506,7 +507,7 @@ export default function DashboardPage() {
                         <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
                             {data.recentTransactions.map((tx: any) => (
                                 <div key={tx.id} className="p-4 sm:px-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                    <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                                             tx.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50' 
                                             : tx.type === 'expense' ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/50'
@@ -514,21 +515,21 @@ export default function DashboardPage() {
                                         }`}>
                                             {tx.type === 'income' ? <ArrowDownRight className="h-5 w-5" /> : tx.type === 'expense' ? <ArrowUpRight className="h-5 w-5" /> : <RefreshCw className="h-5 w-5" />}
                                         </div>
-                                        <div className="min-w-0 flex-1 pr-2">
-                                            <p className="font-medium text-sm sm:text-base leading-tight truncate">
+                                        <div>
+                                            <p className="font-medium text-sm sm:text-base leading-tight">
                                                 {tx.description || tx.category?.name || 'Transaksi'}
                                             </p>
-                                            <div className="flex items-center gap-1.5 sm:gap-2 mt-1 text-[11px] sm:text-xs text-muted-foreground truncate">
-                                                <span className="shrink-0">{new Date(tx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                                                <span className="shrink-0">•</span>
-                                                <span className="flex items-center gap-1 min-w-0 truncate">
-                                                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: tx.category?.color || '#cbd5e1' }} />
-                                                    <span className="truncate">{tx.category?.name || 'Lainnya'}</span>
+                                            <div className="flex items-center gap-2 mt-1 text-[11px] sm:text-xs text-muted-foreground">
+                                                <span>{new Date(tx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                                                <span className="hidden sm:inline">•</span>
+                                                <span className="hidden sm:flex items-center gap-1">
+                                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: tx.category?.color || '#cbd5e1' }} />
+                                                    {tx.category?.name || 'Lainnya'}
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0 ml-2">
+                                    <div className="text-right">
                                         <p className={`font-bold text-sm sm:text-base ${
                                             tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' 
                                             : tx.type === 'expense' ? 'text-rose-600 dark:text-rose-400'
@@ -552,87 +553,19 @@ export default function DashboardPage() {
             </Card>
 
             {/* Row 5: Detailed Charts (Category All Time) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="grid lg:grid-cols-2 gap-6 mt-6">
                 <Card className="shadow-sm border-slate-200/60 dark:border-slate-800/60">
                     <CardHeader>
-                        <CardTitle>Analisis Pengeluaran (Semua Waktu)</CardTitle>
-                        <CardDescription>Ringkasan dan rata-rata sejak transaksi pertama Anda.</CardDescription>
+                        <CardTitle>Total Pengeluaran (Semua Waktu)</CardTitle>
+                        <CardDescription>Akumulasi sejak Anda menggunakan aplikasi.</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        {(() => {
-                            const total = data?.allTimeTotalExpenses || 0;
-                            const firstDateStr = data?.firstTransactionDate;
-                            let daysDiff = 1;
-                            
-                            if (firstDateStr) {
-                                const first = new Date(firstDateStr).getTime();
-                                const now = new Date().getTime();
-                                const diff = Math.max(1, Math.ceil((now - first) / (1000 * 60 * 60 * 24)));
-                                daysDiff = diff;
-                            }
-                            
-                            const avgDaily = total / daysDiff;
-                            const avgMonthly = total / (daysDiff / 30.44);
-                            
-                            // Find highest category
-                            let mostExpense = { name: '-', amount: 0, color: '#ccc' };
-                            if (data?.allTimeCategoryData && data.allTimeCategoryData.length > 0) {
-                                const sorted = [...data.allTimeCategoryData].sort((a, b) => b.totalAmount - a.totalAmount);
-                                mostExpense = {
-                                    name: sorted[0].categoryName,
-                                    amount: sorted[0].totalAmount,
-                                    color: sorted[0].color
-                                };
-                            }
-
-                            return (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="bg-rose-50 dark:bg-rose-950/30 p-4 rounded-xl border border-rose-100 dark:border-rose-900/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <TrendingDown className="h-4 w-4 text-rose-500" />
-                                            <span className="text-sm font-medium text-rose-700 dark:text-rose-400">Total Pengeluaran</span>
-                                        </div>
-                                        <div className="text-xl font-bold text-rose-700 dark:text-rose-400 truncate">
-                                            {formatCurrency(total)}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-amber-50 dark:bg-amber-950/30 p-4 rounded-xl border border-amber-100 dark:border-amber-900/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                            <span className="text-sm font-medium text-amber-700 dark:text-amber-400 truncate">Pengeluaran Terbesar</span>
-                                        </div>
-                                        <div className="text-lg font-bold text-amber-700 dark:text-amber-400 truncate flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: mostExpense.color }} />
-                                            <span className="truncate">{mostExpense.name}</span>
-                                        </div>
-                                        <div className="text-xs text-amber-600/70 dark:text-amber-400/70 truncate mt-1">
-                                            {formatCurrency(mostExpense.amount)}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <CalendarDays className="h-4 w-4 text-indigo-500" />
-                                            <span className="text-sm font-medium text-indigo-700 dark:text-indigo-400">Rata-rata Bulanan</span>
-                                        </div>
-                                        <div className="text-lg font-bold text-indigo-700 dark:text-indigo-400 truncate">
-                                            {formatCurrency(avgMonthly)}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <CalendarClock className="h-4 w-4 text-blue-500" />
-                                            <span className="text-sm font-medium text-blue-700 dark:text-blue-400">Rata-rata Harian</span>
-                                        </div>
-                                        <div className="text-lg font-bold text-blue-700 dark:text-blue-400 truncate">
-                                            {formatCurrency(avgDaily)}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })()}
+                    <CardContent className="flex flex-col justify-center items-center h-[280px]">
+                        <div className="p-6 rounded-full bg-rose-50 dark:bg-rose-950/30 mb-6">
+                            <TrendingDown className="h-12 w-12 text-rose-500" />
+                        </div>
+                        <div className="text-4xl font-extrabold text-rose-600 dark:text-rose-400 tracking-tight">
+                            {formatCurrency(data?.allTimeTotalExpenses || 0)}
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -652,3 +585,7 @@ export default function DashboardPage() {
         </div>
     )
 }
+"""
+
+with open(file_path, 'w', encoding='utf-8') as f:
+    f.write(content)
