@@ -39,6 +39,13 @@ export interface FinancialData {
     
     // Budgets
     budgets: { amount: number; spent: number }[]
+    
+    // Core Settings
+    paydayDate?: number
+    
+    // Insights
+    topWantsCategory?: { name: string, amount: number }
+    topNeedsCategory?: { name: string, amount: number }
 }
 
 export interface FinancialHealthResult {

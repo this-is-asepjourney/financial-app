@@ -1,6 +1,8 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 
 interface FinancialScoreGaugeProps {
     score: number
@@ -45,8 +47,11 @@ export function FinancialScoreGauge({
 
     return (
         <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle>Skor Kesehatan Finansial</CardTitle>
+                <Link href="/financial-health" className="text-sm font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                    Detail & Simulasi <ChevronRight className="h-4 w-4" />
+                </Link>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col items-center space-y-6">

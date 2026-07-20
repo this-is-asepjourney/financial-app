@@ -17,6 +17,13 @@ export async function GET(_request: Request) {
         const now = new Date()
         const { start, end } = getMonthRange(now)
 
+        // 0. Fetch User settings
+        const userDb = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { paydayDate: true }
+        })
+        const paydayDate = userDb?.paydayDate || 1
+
         // 1. Fetch Wallets for Assets & Emergency Fund
         const wallets = await prisma.wallet.findMany({
             where: { userId },
@@ -112,6 +119,9 @@ export async function GET(_request: Request) {
         let monthlyDebtPayments = 0
         let insurancePayments = 0
         let retirementPayments = 0
+        
+        let topWantsCategory = { name: '', amount: 0 }
+        let topNeedsCategory = { name: '', amount: 0 }
 
         // Calculate debts explicitly from Debt model
         let totalDebtAmount = 0
@@ -150,8 +160,14 @@ export async function GET(_request: Request) {
 
                 if (isNeed || isDebtCategory || isInsurance) {
                     needsExpenses += amount
+                    if (amount > topNeedsCategory.amount) {
+                        topNeedsCategory = { name: cat?.name || 'Kebutuhan', amount }
+                    }
                 } else {
                     wantsExpenses += amount
+                    if (amount > topWantsCategory.amount) {
+                        topWantsCategory = { name: cat?.name || 'Keinginan', amount }
+                    }
                 }
             })
         } else {
@@ -184,6 +200,9 @@ export async function GET(_request: Request) {
             hasWill: false,
             budgets: budgets,
             avgMonthlyExpenses,
+            paydayDate,
+            topWantsCategory,
+            topNeedsCategory,
         }
 
         // 5. Calculate Score

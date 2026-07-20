@@ -77,11 +77,15 @@ export async function POST(request: Request) {
                 })
 
                 // Create transaction and update wallet
+                const txType = actualDebtType === 'receivable' ? 'expense' : 'income';
+                const categoryId = await getOrCreateCategory(tx, userId, txType);
+
                 await tx.transaction.create({
                     data: {
                         userId,
                         amount: parsedTotal,
-                        type: actualDebtType === 'receivable' ? 'expense' : 'income',
+                        type: txType,
+                        categoryId,
                         walletId,
                         description: `${actualDebtType === 'receivable' ? 'Piutang' : 'Utang'}: ${name}`,
                         date: new Date(),
@@ -120,4 +124,23 @@ export async function POST(request: Request) {
         console.error('Error creating debt:', error)
         return NextResponse.json({ error: 'Gagal menambahkan utang' }, { status: 500 })
     }
+}
+
+async function getOrCreateCategory(tx: any, userId: string, type: 'income' | 'expense') {
+    const catName = type === 'income' ? 'Pemasukan Piutang/Utang' : 'Tagihan & Pembayaran';
+    let cat = await tx.category.findFirst({
+        where: { userId, name: catName, type }
+    });
+    if (!cat) {
+        cat = await tx.category.create({
+            data: {
+                userId,
+                name: catName,
+                type,
+                color: type === 'income' ? '#10B981' : '#F43F5E',
+                isDebtPayment: type === 'expense' ? true : false,
+            }
+        });
+    }
+    return cat.id;
 }

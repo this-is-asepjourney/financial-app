@@ -32,11 +32,14 @@ export async function POST(
                 const txType = debt.debtType === 'receivable' ? 'income' : 'expense'
                 const amount = debt.remainingAmount
 
+                const categoryId = await getOrCreateCategory(tx, userId, txType);
+
                 await tx.transaction.create({
                     data: {
                         userId,
                         amount,
                         type: txType,
+                        categoryId,
                         walletId,
                         description: `Pelunasan ${debt.debtType === 'receivable' ? 'Piutang' : 'Utang'}: ${debt.name}`,
                         date: new Date(),
@@ -64,4 +67,23 @@ export async function POST(
         console.error('Error paying debt:', error)
         return NextResponse.json({ error: 'Gagal memproses pelunasan' }, { status: 500 })
     }
+}
+
+async function getOrCreateCategory(tx: any, userId: string, type: 'income' | 'expense') {
+    const catName = type === 'income' ? 'Pemasukan Piutang/Utang' : 'Tagihan & Pembayaran';
+    let cat = await tx.category.findFirst({
+        where: { userId, name: catName, type }
+    });
+    if (!cat) {
+        cat = await tx.category.create({
+            data: {
+                userId,
+                name: catName,
+                type,
+                color: type === 'income' ? '#10B981' : '#F43F5E',
+                isDebtPayment: type === 'expense' ? true : false,
+            }
+        });
+    }
+    return cat.id;
 }

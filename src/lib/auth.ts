@@ -36,6 +36,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           monthlyIncome: user.monthlyIncome,
           currency: user.currency,
+          paydayDate: user.paydayDate,
         }
       }
     })
@@ -53,11 +54,13 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.monthlyIncome = user.monthlyIncome
         token.currency = user.currency
+        token.paydayDate = user.paydayDate
       }
       if (trigger === "update" && session?.user) {
         token.name = session.user.name
         token.monthlyIncome = session.user.monthlyIncome
         token.currency = session.user.currency
+        token.paydayDate = session.user.paydayDate
       }
       return token
     },
@@ -66,6 +69,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.monthlyIncome = token.monthlyIncome as number | null
         session.user.currency = token.currency as string | null
+        session.user.paydayDate = token.paydayDate as number | null
       }
       return session
     }

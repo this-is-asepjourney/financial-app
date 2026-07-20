@@ -1,4 +1,10 @@
-'use client'
+import os
+
+file_path = r'd:\repository\financial-app\src\app\(dashboard)\financial-health\page.tsx'
+
+os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+content = """'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
@@ -18,11 +24,7 @@ import {
     Target,
     BookOpen,
     RefreshCw,
-    Calculator,
-    AlertTriangle,
-    CheckCircle,
-    Bot,
-    Sparkles
+    Calculator
 } from 'lucide-react'
 
 export default function FinancialHealthPage() {
@@ -62,16 +64,6 @@ export default function FinancialHealthPage() {
     const handleSimChange = (field: keyof FinancialData, value: number) => {
         if (!simData) return
         const newData = { ...simData, [field]: value }
-        
-        // Logical bounds:
-        // Expenses cannot exceed Income
-        if (newData.monthlyExpenses > newData.monthlyIncome) {
-            newData.monthlyExpenses = newData.monthlyIncome
-        }
-        // Debt Payments cannot exceed Expenses (since they are a subset of expenses realistically)
-        if (newData.monthlyDebtPayments > newData.monthlyExpenses) {
-            newData.monthlyDebtPayments = newData.monthlyExpenses
-        }
         
         // Auto-recalculate related fields if necessary (e.g. monthlySavings)
         newData.monthlySavings = newData.monthlyIncome - newData.monthlyExpenses
@@ -116,7 +108,7 @@ export default function FinancialHealthPage() {
                 <div className="lg:col-span-1 space-y-6">
                     {/* Simulated Score Gauge */}
                     <div className="relative">
-                        {(simData.monthlyIncome !== realData.monthlyIncome || simData.monthlyExpenses !== realData.monthlyExpenses || simData.monthlyDebtPayments !== realData.monthlyDebtPayments || simData.emergencyFund !== realData.emergencyFund) && (
+                        {simHealth.overallScore !== realHealth.overallScore && (
                             <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10 animate-bounce shadow-lg flex items-center gap-1">
                                 <Calculator className="h-3 w-3" /> Simulasi
                             </div>
@@ -155,7 +147,7 @@ export default function FinancialHealthPage() {
                                 </div>
                                 <input 
                                     type="range" 
-                                    min={0} max={Math.max((realData?.monthlyIncome || 10000000) * 3, 50000000)} step={100000}
+                                    min={0} max={Math.max(simData.monthlyIncome * 3, 50000000)} step={500000}
                                     value={simData.monthlyIncome}
                                     onChange={(e) => handleSimChange('monthlyIncome', Number(e.target.value))}
                                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
@@ -170,7 +162,7 @@ export default function FinancialHealthPage() {
                                 </div>
                                 <input 
                                     type="range" 
-                                    min={0} max={simData.monthlyIncome} step={100000}
+                                    min={0} max={Math.max(simData.monthlyExpenses * 2, 30000000)} step={100000}
                                     value={simData.monthlyExpenses}
                                     onChange={(e) => handleSimChange('monthlyExpenses', Number(e.target.value))}
                                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-500"
@@ -185,7 +177,7 @@ export default function FinancialHealthPage() {
                                 </div>
                                 <input 
                                     type="range" 
-                                    min={0} max={simData.monthlyIncome} step={100000}
+                                    min={0} max={Math.max(simData.monthlyDebtPayments * 3, 20000000)} step={100000}
                                     value={simData.monthlyDebtPayments}
                                     onChange={(e) => handleSimChange('monthlyDebtPayments', Number(e.target.value))}
                                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
@@ -200,14 +192,14 @@ export default function FinancialHealthPage() {
                                 </div>
                                 <input 
                                     type="range" 
-                                    min={0} max={Math.max((realData?.totalAssets || 0) * 2, (simData.monthlyExpenses || 5000000) * 12, 50000000)} step={100000}
+                                    min={0} max={Math.max(simData.emergencyFund * 3, 100000000)} step={500000}
                                     value={simData.emergencyFund}
                                     onChange={(e) => handleSimChange('emergencyFund', Number(e.target.value))}
                                     className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                 />
                             </div>
                             
-                            {(simData.monthlyIncome !== realData.monthlyIncome || simData.monthlyExpenses !== realData.monthlyExpenses || simData.monthlyDebtPayments !== realData.monthlyDebtPayments || simData.emergencyFund !== realData.emergencyFund) && (
+                            {simHealth.overallScore !== realHealth.overallScore && (
                                 <div className="pt-2">
                                     <Button onClick={resetSimulation} variant="outline" className="w-full text-xs">
                                         <RefreshCw className="h-3 w-3 mr-2" /> Kembalikan ke Data Asli
@@ -220,112 +212,6 @@ export default function FinancialHealthPage() {
 
                 {/* Right Column: Methodology & Educational Breakdown */}
                 <div className="lg:col-span-2 space-y-6">
-                    {/* Burn Rate Alert */}
-                    {(() => {
-                        const payday = realData.paydayDate || 1;
-                        const now = new Date();
-                        const currentDay = now.getDate();
-                        const currentMonth = now.getMonth();
-                        const currentYear = now.getFullYear();
-
-                        let lastPaydayDate = new Date(currentYear, currentMonth, payday);
-                        let nextPaydayDate = new Date(currentYear, currentMonth + 1, payday);
-
-                        if (currentDay < payday) {
-                            lastPaydayDate = new Date(currentYear, currentMonth - 1, payday);
-                            nextPaydayDate = new Date(currentYear, currentMonth, payday);
-                        }
-
-                        const totalDays = Math.max(1, (nextPaydayDate.getTime() - lastPaydayDate.getTime()) / (1000 * 60 * 60 * 24));
-                        const daysPassed = Math.max(0, (now.getTime() - lastPaydayDate.getTime()) / (1000 * 60 * 60 * 24));
-                        const daysLeft = Math.max(0, (nextPaydayDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        
-                        const timeSpentPct = daysPassed / totalDays;
-                        const moneySpentPct = realData.monthlyIncome > 0 ? (realData.monthlyExpenses / realData.monthlyIncome) : 0;
-
-                        const isBoros = moneySpentPct > (timeSpentPct + 0.15); // 15% tolerance
-                        const isSafe = moneySpentPct <= (timeSpentPct + 0.05);
-
-                        return (
-                            <Card className={`border-l-4 ${isBoros ? 'border-l-rose-500 bg-rose-50 dark:bg-rose-950/20' : isSafe ? 'border-l-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' : 'border-l-amber-500 bg-amber-50 dark:bg-amber-950/20'}`}>
-                                <CardContent className="p-5 flex items-start gap-4">
-                                    {isBoros ? <AlertTriangle className="h-6 w-6 text-rose-500 mt-1 shrink-0" /> : isSafe ? <CheckCircle className="h-6 w-6 text-emerald-500 mt-1 shrink-0" /> : <Info className="h-6 w-6 text-amber-500 mt-1 shrink-0" />}
-                                    <div className="space-y-2">
-                                        <h4 className={`font-semibold ${isBoros ? 'text-rose-700 dark:text-rose-400' : isSafe ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                            {isBoros ? 'Peringatan: Pengeluaran Anda Terlalu Cepat (Boros)!' : isSafe ? 'Bagus! Kecepatan Pengeluaran Anda Terkendali.' : 'Perhatikan Kecepatan Pengeluaran Anda.'}
-                                        </h4>
-                                        <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                                            Gajian berikutnya dalam <strong>{Math.ceil(daysLeft)} hari</strong> (Tgl {payday}).<br/>
-                                            Waktu sejak gajian lalu: <strong>{(timeSpentPct * 100).toFixed(0)}%</strong> berlalu, 
-                                            tetapi Anda sudah menghabiskan <strong>{(moneySpentPct * 100).toFixed(0)}%</strong> dari total pemasukan.
-                                        </p>
-                                        {isBoros && (
-                                            <p className="text-sm text-rose-600 font-medium">
-                                                Saldo Anda berisiko habis sebelum waktu gajian tiba. Kurangi pengeluaran 'Wants' (keinginan) Anda sekarang!
-                                            </p>
-                                        )}
-                                    </div>
-                                </CardContent>
-                                
-                                {/* AI Analyst Persona */}
-                                <div className="border-t border-slate-200/50 dark:border-slate-800/50 bg-white/50 dark:bg-slate-900/50 p-4 sm:p-5">
-                                    <div className="flex gap-3 items-start">
-                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                                            <Bot className="h-4 w-4" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h5 className="font-semibold text-sm text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
-                                                AI Financial Analyst <Sparkles className="h-3 w-3 text-amber-500" />
-                                            </h5>
-                                            
-                                            {isBoros ? (
-                                                <div className="text-sm text-slate-700 dark:text-slate-300 space-y-2 leading-relaxed">
-                                                    <p>
-                                                        Halo! Berdasarkan analisis data transaksi Anda, pembengkakan pengeluaran terbesar bersumber dari <strong>{realData.topWantsCategory?.name || 'Keinginan'}</strong> dengan total <strong>Rp{realData.topWantsCategory?.amount?.toLocaleString('id-ID') || 0}</strong>.
-                                                    </p>
-                                                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/50 mt-2">
-                                                        <strong className="text-indigo-800 dark:text-indigo-300">💡 Solusi & Saran:</strong>
-                                                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                                                            <li>Tunda sementara pengeluaran untuk <strong>{realData.topWantsCategory?.name || 'Keinginan'}</strong> selama <strong>{Math.ceil(daysLeft)} hari</strong> ke depan.</li>
-                                                            <li>Fokuskan sisa saldo Anda HANYA untuk menopang kebutuhan esensial seperti <strong>{realData.topNeedsCategory?.name || 'Kebutuhan'}</strong>.</li>
-                                                            <li>Jika Anda menggunakan Paylater atau Kartu Kredit, hentikan penggunaannya bulan ini untuk mencegah utang menumpuk.</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            ) : isSafe ? (
-                                                <div className="text-sm text-slate-700 dark:text-slate-300 space-y-2 leading-relaxed">
-                                                    <p>
-                                                        Luar biasa! Manajemen arus kas Anda sangat sehat. Anda berhasil menekan pengeluaran <strong>{realData.topWantsCategory?.name || 'Keinginan'}</strong> Anda di angka yang wajar (Rp{realData.topWantsCategory?.amount?.toLocaleString('id-ID') || 0}).
-                                                    </p>
-                                                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/50 mt-2">
-                                                        <strong className="text-indigo-800 dark:text-indigo-300">💡 Saran Lanjutan:</strong>
-                                                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                                                            <li>Pertahankan ritme ini selama <strong>{Math.ceil(daysLeft)} hari</strong> ke depan.</li>
-                                                            <li>Jika di akhir siklus gajian nanti masih ada sisa uang bulanan, segera alokasikan ke <strong>Dana Darurat</strong> atau <strong>Investasi</strong> sebelum gajian berikutnya masuk!</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="text-sm text-slate-700 dark:text-slate-300 space-y-2 leading-relaxed">
-                                                    <p>
-                                                        Halo! Arus kas Anda saat ini sedang berada di ambang batas wajar. Kebutuhan terbesar Anda ada di <strong>{realData.topNeedsCategory?.name || 'Kebutuhan'}</strong> (Rp{realData.topNeedsCategory?.amount?.toLocaleString('id-ID') || 0}), sedangkan pengeluaran sekunder terbesar ada di <strong>{realData.topWantsCategory?.name || 'Keinginan'}</strong>.
-                                                    </p>
-                                                    <div className="bg-indigo-50 dark:bg-indigo-950/30 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/50 mt-2">
-                                                        <strong className="text-indigo-800 dark:text-indigo-300">💡 Saran Penyesuaian:</strong>
-                                                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                                                            <li>Berhati-hatilah agar pengeluaran sekunder (Wants) tidak melebar di <strong>{Math.ceil(daysLeft)} hari</strong> terakhir ini.</li>
-                                                            <li>Catat setiap transaksi sekecil apapun agar Anda tidak melewati batas aman sebelum gajian tiba.</li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        )
-                    })()}
-
                     <Card className="shadow-sm">
                         <CardHeader className="pb-4 border-b border-slate-100 dark:border-slate-800/60">
                             <CardTitle className="text-xl flex items-center gap-2">
@@ -480,3 +366,7 @@ export default function FinancialHealthPage() {
         </div>
     )
 }
+"""
+
+with open(file_path, 'w', encoding='utf-8') as f:
+    f.write(content)

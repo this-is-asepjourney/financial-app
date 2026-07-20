@@ -11,7 +11,7 @@ export async function PUT(request: Request) {
         const userId = session.user.id
 
         const body = await request.json()
-        const { name, email, monthlyIncome, currency, currentPassword, newPassword } = body
+        const { name, email, monthlyIncome, currency, paydayDate, currentPassword, newPassword } = body
 
         // Fetch existing user to verify password if trying to change it
         const existingUser = await prisma.user.findUnique({
@@ -28,6 +28,7 @@ export async function PUT(request: Request) {
         if (email !== undefined) updateData.email = email
         if (monthlyIncome !== undefined) updateData.monthlyIncome = parseFloat(monthlyIncome)
         if (currency !== undefined) updateData.currency = currency
+        if (paydayDate !== undefined) updateData.paydayDate = parseInt(paydayDate, 10)
 
         // Handle password update if provided
         if (currentPassword && newPassword) {
@@ -47,7 +48,8 @@ export async function PUT(request: Request) {
                 name: true,
                 email: true,
                 monthlyIncome: true,
-                currency: true
+                currency: true,
+                paydayDate: true
             }
         })
 

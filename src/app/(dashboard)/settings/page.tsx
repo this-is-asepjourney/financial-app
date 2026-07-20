@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useToast } from '@/components/ui/use-toast'
-import { User, Mail, Save, Lock, Wallet, Shield, Settings2, CreditCard } from 'lucide-react'
+import { User, Mail, Save, Lock, Wallet, Shield, Settings2, CreditCard, Calendar } from 'lucide-react'
+import { IncomeSourcesManager } from '@/components/settings/IncomeSourcesManager'
 import {
     Select,
     SelectContent,
@@ -30,6 +31,7 @@ export default function SettingsPage() {
     // Finance State
     const [monthlyIncome, setMonthlyIncome] = useState(user?.monthlyIncome?.toString() || '0')
     const [currency, setCurrency] = useState(user?.currency || 'IDR')
+    const [paydayDate, setPaydayDate] = useState(user?.paydayDate?.toString() || '1')
 
     // Security State
     const [currentPassword, setCurrentPassword] = useState('')
@@ -43,6 +45,7 @@ export default function SettingsPage() {
         setEmail(user?.email || '')
         setMonthlyIncome(user?.monthlyIncome?.toString() || '0')
         setCurrency(user?.currency || 'IDR')
+        setPaydayDate(user?.paydayDate?.toString() || '1')
     }
 
     const handleSave = async () => {
@@ -58,6 +61,7 @@ export default function SettingsPage() {
             } else if (activeTab === 'finance') {
                 payload.monthlyIncome = parseFloat(monthlyIncome)
                 payload.currency = currency
+                payload.paydayDate = parseInt(paydayDate, 10)
             } else if (activeTab === 'security') {
                 if (!currentPassword || !newPassword) {
                     throw new Error('Harap isi password lama dan baru')
@@ -87,6 +91,7 @@ export default function SettingsPage() {
                     email: data.user.email,
                     monthlyIncome: data.user.monthlyIncome,
                     currency: data.user.currency,
+                    paydayDate: data.user.paydayDate,
                 }
             })
 
@@ -235,19 +240,34 @@ export default function SettingsPage() {
                                         </SelectContent>
                                     </Select>
                                 </div>
+                                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    <IncomeSourcesManager onTotalUpdate={(total) => setMonthlyIncome(total.toString())} />
+                                    
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl flex items-center justify-between border border-slate-200 dark:border-slate-800">
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-medium text-slate-500">Estimasi Total Pemasukan Bulanan</p>
+                                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                                Rp{parseFloat(monthlyIncome || '0').toLocaleString('id-ID')}
+                                            </p>
+                                        </div>
+                                        <CreditCard className="h-8 w-8 text-indigo-500/20" />
+                                    </div>
+                                </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-sm font-medium">Target Pemasukan Bulanan</label>
+                                    <label className="text-sm font-medium">Tanggal Gajian Rutin (1-31)</label>
                                     <div className="relative">
-                                        <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            value={monthlyIncome}
-                                            onChange={(e) => setMonthlyIncome(e.target.value)}
+                                            value={paydayDate}
+                                            onChange={(e) => setPaydayDate(e.target.value)}
                                             type="number"
+                                            min="1"
+                                            max="31"
                                             className="pl-10"
-                                            placeholder="Contoh: 10000000"
+                                            placeholder="Contoh: 25"
                                         />
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">Gunakan angka saja tanpa titik/koma (misal: 15000000)</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Tanggal rutin pemasukan utama Anda untuk perhitungan pengeluaran mingguan.</p>
                                 </div>
                                 <div className="pt-4">
                                     <Button onClick={handleSave} disabled={isLoading} className="gap-2">

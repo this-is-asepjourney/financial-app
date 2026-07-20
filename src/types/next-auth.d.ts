@@ -9,6 +9,7 @@ declare module "next-auth" {
       image?: string | null
       monthlyIncome?: number | null
       currency?: string | null
+      paydayDate?: number | null
     }
   }
 
@@ -18,5 +19,6 @@ declare module "next-auth" {
     email?: string | null
     monthlyIncome?: number | null
     currency?: string | null
+    paydayDate?: number | null
   }
 }
