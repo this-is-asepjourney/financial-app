@@ -191,3 +191,63 @@ export async function checkGoalAlerts(userId: string) {
         console.error('Error checking goal alerts:', error)
     }
 }
+
+/**
+ * Cek tenggat waktu hutang (Debt) yang mendekati jatuh tempo
+ */
+export async function checkDebtAlerts(userId: string) {
+    try {
+        const debts = await prisma.debt.findMany({
+            where: {
+                userId,
+                remainingAmount: { gt: 0 },
+                dueDate: { not: null },
+            },
+        })
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        for (const debt of debts) {
+            if (!debt.dueDate) continue
+
+            const dueDate = new Date(debt.dueDate)
+            dueDate.setHours(0, 0, 0, 0)
+            
+            const diffTime = dueDate.getTime() - today.getTime()
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+            let type: NotificationType | null = null
+            let title = ''
+            let message = ''
+
+            if (diffDays < 0) {
+                type = 'alert'
+                title = 'Tagihan Terlewat!'
+                message = `Tagihan ${debt.name} sudah melewati batas waktu jatuh tempo.`
+            } else if (diffDays <= 3) {
+                type = 'warning'
+                title = 'Tagihan Segera Jatuh Tempo'
+                message = `Tagihan ${debt.name} akan jatuh tempo dalam ${diffDays} hari.`
+            }
+
+            if (type) {
+                // Hindari spam notifikasi yang sama dalam 1 hari
+                const existingNotif = await prisma.notification.findFirst({
+                    where: {
+                        userId,
+                        title,
+                        message,
+                        createdAt: { gte: today },
+                    }
+                })
+
+                if (!existingNotif) {
+                    await createNotification({ userId, title, message, type })
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error checking debt alerts:', error)
+    }
+}

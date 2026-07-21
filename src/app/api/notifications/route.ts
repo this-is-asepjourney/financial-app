@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { cleanupOldNotifications, checkBudgetAlerts, checkGoalAlerts } from '@/lib/notification-service'
+import { cleanupOldNotifications, checkBudgetAlerts, checkGoalAlerts, checkDebtAlerts } from '@/lib/notification-service'
 
 // GET /api/notifications
 export async function GET(_req: NextRequest) {
@@ -14,11 +14,12 @@ export async function GET(_req: NextRequest) {
 
         const userId = session.user.id
 
-        // Jalankan background check untuk budget & goals saat mengambil notifikasi
+        // Jalankan background check untuk budget, goals, & hutang saat mengambil notifikasi
         // Fire and forget, jangan ditunggu agar tidak memperlambat response
         cleanupOldNotifications(30).catch(console.error)
         checkBudgetAlerts(userId).catch(console.error)
         checkGoalAlerts(userId).catch(console.error)
+        checkDebtAlerts(userId).catch(console.error)
 
         const notifications = await prisma.notification.findMany({
             where: {

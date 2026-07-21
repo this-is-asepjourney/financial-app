@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Bell, Check, Trash2, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,6 +9,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/use-toast'
 
 interface Notification {
     id: string
@@ -20,23 +21,41 @@ interface Notification {
 }
 
 export function NotificationMenu() {
+    const { toast } = useToast()
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const prevNotifIds = useRef<Set<string>>(new Set())
 
     const fetchNotifications = useCallback(async () => {
         try {
             const res = await fetch('/api/notifications')
             if (res.ok) {
                 const data = await res.json()
-                setNotifications(data.notifications || [])
+                const newNotifs: Notification[] = data.notifications || []
+                
+                // Cek notifikasi baru untuk trigger toast
+                if (prevNotifIds.current.size > 0) {
+                    newNotifs.forEach(notif => {
+                        if (!notif.isRead && !prevNotifIds.current.has(notif.id)) {
+                            toast({
+                                title: notif.title,
+                                description: notif.message,
+                                variant: (notif.type === 'alert' || notif.type === 'warning') ? 'destructive' : 'default',
+                            })
+                        }
+                    })
+                }
+                
+                prevNotifIds.current = new Set(newNotifs.map(n => n.id))
+                setNotifications(newNotifs)
                 setUnreadCount(data.unreadCount || 0)
             }
         } catch (error) {
             console.error('Error fetching notifications:', error)
         }
-    }, [])
+    }, [toast])
 
     // Fetch on mount and set interval to check every 1 minute
     useEffect(() => {
