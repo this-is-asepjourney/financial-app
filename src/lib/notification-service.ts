@@ -88,7 +88,7 @@ export async function checkBudgetAlerts(userId: string) {
                         where: {
                             userId,
                             title: {
-                                contains: 'Budget Hampir Habis',
+                                contains: 'Saldo Menipis',
                             },
                             message: {
                                 contains: budget.category.name,
@@ -102,8 +102,8 @@ export async function checkBudgetAlerts(userId: string) {
                     if (!existingNotif) {
                         await createNotification({
                             userId,
-                            title: 'Budget Hampir Habis',
-                            message: `Pengeluaran kategori ${budget.category.name} Anda sudah mencapai ${percentage.toFixed(0)}% dari batas budget bulan ini.`,
+                            title: 'Peringatan Saldo Menipis',
+                            message: `Saldo budget kategori ${budget.category.name} Anda hampir habis (terpakai ${percentage.toFixed(0)}%).`,
                             type: 'warning',
                         })
                     }
@@ -117,7 +117,7 @@ export async function checkBudgetAlerts(userId: string) {
                         where: {
                             userId,
                             title: {
-                                contains: 'Budget Melebihi Batas',
+                                contains: 'Melampaui Batas',
                             },
                             message: {
                                 contains: budget.category.name,
@@ -131,8 +131,8 @@ export async function checkBudgetAlerts(userId: string) {
                     if (!existingNotif) {
                         await createNotification({
                             userId,
-                            title: 'Budget Melebihi Batas',
-                            message: `Pengeluaran kategori ${budget.category.name} Anda sudah melebihi batas budget bulan ini!`,
+                            title: 'Budget Melampaui Batas',
+                            message: `Pengeluaran kategori ${budget.category.name} Anda telah melampaui batas budget bulan ini!`,
                             type: 'alert',
                         })
                     }
